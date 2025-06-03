@@ -33,34 +33,113 @@ N8NBrowseragents/
 └── _locales/               # Arquivos de internacionalização
 ```
 
-## Checklist de Desenvolvimento
+## Checklist de Desenvolvimento para MVP
 
-### Fase 1: Configuração Inicial e Estrutura
+### Fase 1: Configuração Inicial e Estrutura (PRIORIDADE ALTA)
 
-- [ ] Criar estrutura básica de diretórios
-- [ ] Configurar manifest.json com permissões necessárias
-- [ ] Implementar background service worker básico
-- [ ] Criar interface popup inicial
-- [ ] Configurar sistema de build (webpack/rollup)
-- [ ] Implementar sistema de armazenamento para configurações
+- [x] Criar estrutura básica de diretórios
+- [x] Configurar manifest.json com permissões necessárias
+- [x] Implementar background service worker básico
+- [x] Criar interface popup inicial
+- [ ] ~~Configurar sistema de build (webpack/rollup)~~ (não necessário para versão de teste)
+- [x] Implementar sistema de armazenamento para configurações
 
-### Fase 2: Integração com OpenRouter
+### Fase 2: Integração com OpenRouter (PRIORIDADE ALTA)
 
-- [ ] Implementar classe OpenRouterAPI (já concluído)
-- [ ] Adicionar interface para configuração da API key
-- [ ] Implementar seleção de modelos disponíveis
-- [ ] Criar componentes de UI para exibição de resultados
-- [ ] Adicionar indicadores de uso/créditos da API
-- [ ] Implementar cache para reduzir chamadas à API
+- [x] Implementar classe OpenRouterAPI
+- [x] Adicionar interface para configuração da API key
+- [x] Implementar seleção de modelos disponíveis
+- [x] Criar componentes de UI para exibição de resultados
+- [ ] ~~Adicionar indicadores de uso/créditos da API~~ (pode ser adicionado após versão de teste)
+- [ ] ~~Implementar cache para reduzir chamadas à API~~ (pode ser adicionado após versão de teste)
 
-### Fase 3: Funcionalidades Principais
+### Fase 3: Funcionalidades Essenciais (PRIORIDADE ALTA)
 
-- [ ] Implementar geração de workflows a partir de descrições
-- [ ] Criar analisador de workflows existentes
-- [ ] Desenvolver assistente de configuração de nós
-- [ ] Implementar biblioteca de templates
-- [ ] Adicionar funcionalidade de exportação/importação
-- [ ] Criar sistema de histórico de interações
+- [x] Implementar geração de workflows a partir de descrições
+- [ ] Criar analisador básico de workflows existentes
+- [ ] Desenvolver assistente simples de configuração de nós
+- [x] Implementar biblioteca mínima de templates
+- [x] Adicionar funcionalidade de exportação/importação
+- [ ] ~~Criar sistema de histórico de interações~~ (pode ser adicionado após versão de teste)
+
+### Fase 3.1: Integração Docker (PRIORIDADE ALTA)
+
+- [x] Implementar controle de containers Docker (iniciar/parar/reiniciar)
+- [x] Adicionar geração de docker-compose.yml
+- [x] Implementar visualização de logs do container
+- [x] Adicionar funcionalidade de auto-refresh de logs
+- [x] Implementar verificação de status do container
+
+## Próximos Passos para MVP
+
+### Tarefas Pendentes Prioritárias
+
+1. **Testes de Integração**
+   - [ ] Testar integração completa entre UI e background script
+   - [ ] Verificar comunicação com OpenRouter em diferentes cenários
+   - [ ] Testar ciclo completo de geração de workflow e exportação
+
+2. **Correções de UI**
+   - [ ] Resolver problemas de responsividade na interface
+   - [ ] Garantir feedback visual adequado durante operações assíncronas
+   - [ ] Verificar tratamento de erros em todos os fluxos principais
+   - [x] Corrigir erros de sintaxe no arquivo n8n-agent-ui.js
+   - [x] Remover métodos duplicados e reorganizar código
+   - [x] Implementar método updateUIFromState para sincronização da interface
+
+3. **Melhorias na Integração Docker**
+   - [x] Corrigir referências a elementos DOM no método displayContainerLogs
+   - [x] Adicionar event listeners para botões de controle do container
+   - [x] Implementar auto-refresh de logs com toggle
+   - [x] Corrigir parâmetros enviados nas requisições ao background script
+   - [ ] Testar integração completa com Docker em diferentes ambientes
+
+4. **Documentação Mínima**
+   - [ ] Criar README.md com instruções de instalação
+   - [ ] Documentar fluxo básico de uso da extensão
+   - [ ] Adicionar screenshots da interface
+
+5. **Empacotar para Distribuição**
+   - [ ] Verificar manifesto para compatibilidade com Chrome Web Store
+   - [ ] Criar assets necessários (ícones em diferentes tamanhos)
+   - [ ] Preparar descrição e materiais para submissão
+
+## Nota sobre a Versão de Teste
+
+A versão de teste da extensão Chrome deve focar nas funcionalidades essenciais que demonstram o valor principal da ferramenta:
+
+1. **Integração com IA**: Capacidade de gerar workflows do N8N a partir de descrições em linguagem natural
+2. **Gerenciamento Docker**: Facilidade para iniciar/parar/monitorar uma instância N8N em container Docker
+3. **Exportação/Importação**: Funcionalidade básica para exportar workflows gerados
+
+Os recursos avançados como cache, histórico detalhado e indicadores de uso podem ser implementados após a validação inicial do conceito.
+
+## Padrões de Código e Boas Práticas
+
+### Commits
+
+- **Commits Pequenos e Focados**: Cada commit deve conter apenas mudanças relacionadas a uma única tarefa ou problema.
+- **Mensagens Padronizadas**: Usar o padrão de Conventional Commits
+  - Formato: `<tipo>(escopo): descrição`
+  - Exemplos: 
+    - `feat(auth): adiciona suporte ao login via OAuth`
+    - `fix(ui): corrige alinhamento do botão em dispositivos móveis`
+- **Não Comitar Código Incompleto**: Apenas fazer commits de código funcional e testado.
+
+### Testes
+
+- **Cobertura de Testes**: Todo novo código deve vir acompanhado de testes unitários.
+- **Testes Automatizados**: Configurar pipelines CI/CD para garantir que todo commit seja testado automaticamente.
+- **Evitar Dependências Externas nos Testes**: Usar mocks ou stubs para simular dependências externas.
+
+### Eficiência e Qualidade
+
+- **Modularidade**: Dividir o código em módulos pequenos, com responsabilidades bem definidas.
+- **Evitar Código Redundante**: Verificar se existe uma função ou módulo que já atende à necessidade.
+- **Performance**: Monitorar o desempenho do código e evitar soluções ineficientes.
+- **Convenções Consistentes**: Adotar um padrão claro para nomes de variáveis, funções e classes.
+- **Eliminar Código Morto**: Remover trechos de código não utilizados ou comentados.
+- **Comentários Significativos**: Usar comentários apenas quando necessário para explicar lógica complexa.
 
 ### Fase 4: Integração com N8N
 
