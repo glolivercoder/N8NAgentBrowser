@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações - N8N Workflow Assistant</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <img src="../assets/icons/icon48.png" alt="N8N Workflow Assistant">
+        <h1>N8N Workflow Assistant</h1>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>Configurações da API</h2>
+        
+        <form id="api-settings-form">
+          <div class="form-group">
+            <label for="openrouter-api-key">OpenRouter API Key:</label>
+            <div class="api-key-input">
+              <input type="password" id="openrouter-api-key" placeholder="Insira sua API key da OpenRouter">
+              <button type="button" id="toggle-api-key" class="icon-btn">👁️</button>
+            </div>
+            <small>Obtenha sua API key em <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a></small>
+          </div>
+          
+          <div class="form-group">
+            <label for="default-model">Modelo padrão:</label>
+            <select id="default-model">
+              <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (Gratuito)</option>
+              <option value="anthropic/claude-3-opus:beta">Claude 3 Opus</option>
+              <option value="anthropic/claude-3-sonnet:beta">Claude 3 Sonnet</option>
+              <option value="gpt-4o">GPT-4o</option>
+              <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+            </select>
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="primary-btn">Salvar Configurações</button>
+          </div>
+        </form>
+      </section>
+      
+      <section class="card">
+        <h2>Instâncias N8N</h2>
+        
+        <form id="n8n-instances-form">
+          <div id="n8n-instances">
+            <div class="instance-item">
+              <input type="text" placeholder="URL da instância N8N (ex: http://localhost:5678)" class="instance-url">
+              <button type="button" class="remove-instance icon-btn">❌</button>
+            </div>
+          </div>
+          
+          <button type="button" id="add-instance" class="secondary-btn">Adicionar Instância</button>
+          
+          <div class="form-actions">
+            <button type="submit" class="primary-btn">Salvar Instâncias</button>
+          </div>
+        </form>
+      </section>
+      
+      <section class="card">
+        <h2>Aparência</h2>
+        
+        <form id="appearance-form">
+          <div class="form-group">
+            <label for="theme">Tema:</label>
+            <select id="theme">
+              <option value="light">Claro</option>
+              <option value="dark">Escuro</option>
+              <option value="system">Sistema</option>
+            </select>
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="primary-btn">Salvar Aparência</button>
+          </div>
+        </form>
+      </section>
+      
+      <section class="card">
+        <h2>Uso da API</h2>
+        
+        <div id="api-usage-stats">
+          <p class="empty-state">Configure sua API key para ver estatísticas de uso</p>
+        </div>
+        
+        <button id="refresh-stats" class="secondary-btn">Atualizar Estatísticas</button>
+      </section>
+    </main>
+    
+    <footer>
+      <p>N8N Workflow Assistant v1.0.0</p>
+      <p>Desenvolvido para a comunidade N8N</p>
+    </footer>
+  </div>
+
+  <script src="options.js" type="module"></script>
+</body>
+</html>
