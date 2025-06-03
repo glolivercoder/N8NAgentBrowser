@@ -98,14 +98,25 @@ async function updateState(updates, saveToStorage = false) {
 
 // Listener para mensagens da popup e content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('[BACKGROUND] Listener triggered. Message Action:', message && message.action, 'Target:', message && message.target);
+  // Roteamento baseado no target da mensagem
+  if (message.target === 'n8nAgent') {
+    handleN8NAgentMessages(message, sendResponse);
+    return true; // Indicar resposta assíncrona
+  } else if (message.target === 'ragSystem') {
+    // Supondo que você tenha ou terá um handleRagSystemMessages
+    // handleRagSystemMessages(message, sendResponse);
+    // return true; // Indicar resposta assíncrona
+    // Por enquanto, se não houver, pode deixar cair para lógica abaixo ou erro específico
+    console.warn('Mensagem para ragSystem recebida, mas nenhum handler definido.');
+    // sendResponse({ success: false, error: 'Handler para ragSystem não implementado' });
+    // return false; // ou true se handleRagSystemMessages for async
+  }
+
+  // Lógica original para mensagens não direcionadas ou sem target específico
   // Garantir que sendResponse possa ser chamado de forma assíncrona
   const asyncResponse = async () => {
     try {
-      // Mensagem direcionada ao agente N8N
-      if (message.target === 'n8nAgent') {
-        await handleN8NAgentMessages(message, sendResponse);
-        return;
-      }
       
       // Mensagens gerais da extensão
       if (message.action === 'setApiKey') {
@@ -185,7 +196,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true });
       }
       else {
-        sendResponse({ success: false, error: 'Ação desconhecida' });
+        // Se chegou aqui, é uma ação não reconhecida pelo listener principal
+        // e não era para 'n8nAgent' ou 'ragSystem'
+        console.warn('Ação desconhecida no listener principal:', message.action);
+        sendResponse({ success: false, error: `Ação desconhecida no listener principal: ${message.action}` });
       }
     } catch (error) {
       console.error('Erro ao processar mensagem:', error);
@@ -204,7 +218,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Handler para mensagens específicas do N8N Agent
 async function handleN8NAgentMessages(message, sendResponse) {
   try {
-    const { action, params } = message;
+    const { action, params = {} } = message;
+    
+    // Resposta básica para ping - usado para testar comunicação
+    if (action === 'ping') {
+      sendResponse({ 
+        success: true, 
+        message: 'Background script respondeu ao ping com sucesso!', 
+        timestamp: Date.now() 
+      });
+    }
     
     // Ações relacionadas ao N8N Agent
     if (action === 'answerQuestion') {
@@ -226,52 +249,105 @@ async function handleN8NAgentMessages(message, sendResponse) {
       sendResponse(result);
     }
     else if (action === 'setApiConfig') {
-      await n8nAgentIntegration.setApiConfig(params.apiUrl, params.apiKey);
-      
-      // Atualizar configurações individualmente
-      await storageManager.setSetting('n8nApiUrl', params.apiUrl);
-      await storageManager.setSetting('n8nApiKey', params.apiKey);
-      
-      // Configurar a chave API do OpenRouter
+            // await n8nAgentIntegration.setApiConfig(params.apiUrl, params.apiKey); // Potentially redundant for storage
+
+      await storageManager.setSetting('apiUrl', params.apiUrl);
+      await storageManager.setSetting('apiKey', params.apiKey);
+
       if (params.openrouterApiKey) {
-        await openRouterAPI.setApiKey(params.openrouterApiKey);
+        await openRouterAPI.setApiKey(params.openrouterApiKey); // Configures the API instance
         await storageManager.setSetting('openrouterApiKey', params.openrouterApiKey);
       }
-      
+
       if (params.mcpPlaywrightUrl) {
-        await storageManager.setSetting('mcpConfig.playwrightRepoUrl', params.mcpPlaywrightUrl);
+        await storageManager.setSetting('mcpPlaywrightUrl', params.mcpPlaywrightUrl);
       }
-      
-      // Atualizar o estado da aplicação
-      await updateState({
-        settings: await storageManager.getSettings()
-      });
-      
-      sendResponse({ success: true });
+
+      // Save Docker settings
+      if (params.dockerPort) {
+        await storageManager.setSetting('dockerPort', params.dockerPort);
+      }
+      if (params.dockerDataPath) {
+        await storageManager.setSetting('dockerDataPath', params.dockerDataPath);
+      }
+
+      const currentSettings = await storageManager.getSettings();
+      await updateState({ settings: currentSettings });
+
+      sendResponse({ success: true, message: 'Configurações salvas.', settings: currentSettings });
     }
-    
+    else if (action === 'testOpenRouterCredentials') {
+      try {
+        // A simple way to test credentials is to try a lightweight API call, like getting models.
+        // Ensure openRouterAPI is initialized and API key is set if needed from appState.settings
+        if (appState.settings && appState.settings.openrouterApiKey && !openRouterAPI.isConfigured()) {
+          await openRouterAPI.setApiKey(appState.settings.openrouterApiKey);
+        }
+        
+        if (!openRouterAPI.isConfigured()) {
+          sendResponse({ success: false, error: 'API Key do OpenRouter não configurada na extensão.' });
+          return;
+        }
+        
+        await openRouterAPI.getAvailableModels(); // This will throw an error if API key is invalid
+        sendResponse({ success: true, message: 'Conexão com OpenRouter e chave API válidas!' });
+      } catch (error) {
+        console.error('Erro ao testar credenciais OpenRouter:', error);
+        sendResponse({ success: false, error: `Falha na conexão com OpenRouter: ${error.message}` });
+      }
+    }
+    else if (action === 'getApiConfig') {
+      const settings = await storageManager.getSettings();
+      // Ensure the settings object is what the UI expects, or transform if necessary.
+      // For now, assume storageManager.getSettings() returns an object like:
+      // { apiUrl: '...', apiKey: '...', openrouterApiKey: '...', mcpPlaywrightUrl: '...', dockerPort: '...', dockerDataPath: '...' }
+      sendResponse(settings); 
+    }
     // Ações relacionadas ao Docker
     else if (action === 'generateDockerCompose') {
-      const dockerComposeContent = await dockerIntegration.generateDockerComposeFile(params);
-      appState.lastGeneratedDockerCompose = dockerComposeContent;
-      sendResponse({ success: true, dockerComposeContent });
+      try {
+        const dockerCompose = await dockerIntegration.generateDockerComposeFile({
+          port: params.port || '5678',
+          dataPath: params.dataPath || './n8n-data'
+        });
+        appState.lastGeneratedDockerCompose = dockerCompose;
+        sendResponse({ success: true, dockerCompose });
+      } catch (error) {
+        console.error('Erro ao gerar Docker Compose:', error);
+        sendResponse({ success: false, error: error.message || 'Erro ao gerar Docker Compose' });
+      }
     }
-    else if (action === 'checkContainerStatus') {
+    else if (action === 'checkDockerStatus') {
       const status = await dockerIntegration.getContainerStatus();
       appState.dockerStatus = status;
       sendResponse({ success: true, status });
     }
-    else if (action === 'startContainer') {
+    else if (action === 'startDockerContainer' || action === 'startContainer') {
       const result = await dockerIntegration.startContainer(params.port);
       sendResponse(result);
     }
-    else if (action === 'stopContainer') {
+    else if (action === 'stopDockerContainer' || action === 'stopContainer') {
       const result = await dockerIntegration.stopContainer();
       sendResponse(result);
     }
-    else if (action === 'saveDockerCompose') {
-      const result = await dockerIntegration.saveDockerComposeFile(params.content, params.path);
+    else if (action === 'restartDockerContainer' || action === 'restartContainer') {
+      const result = await dockerIntegration.restartContainer(); // Assuming dockerIntegration has this method
       sendResponse(result);
+    }
+    else if (action === 'getDockerLogs') {
+      const logs = await dockerIntegration.getLogs(params); // Assuming dockerIntegration has this method and params might contain { lines: ... }
+      sendResponse({ success: true, logs });
+    }
+    else if (action === 'saveDockerCompose') {
+      try {
+        const content = params.content || appState.lastGeneratedDockerCompose;
+        const path = params.path || './docker-compose.yml';
+        const result = await dockerIntegration.saveDockerComposeFile(content, path);
+        sendResponse({ success: true, message: 'Docker Compose salvo com sucesso', path });
+      } catch (error) {
+        console.error('Erro ao salvar Docker Compose:', error);
+        sendResponse({ success: false, error: error.message || 'Erro ao salvar Docker Compose' });
+      }
     }
     
     // Ações relacionadas ao MCP

@@ -321,7 +321,7 @@ export class N8NIntegrationTests {
     return new Promise((resolve, reject) => {
       try {
         chrome.runtime.sendMessage(
-          { action, ...params },
+          { target: 'n8nAgent', action, params },
           (response) => {
             if (chrome.runtime.lastError) {
               reject(new Error(`Erro ao enviar mensagem: ${chrome.runtime.lastError.message}`));

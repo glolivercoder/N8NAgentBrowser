@@ -1259,7 +1259,7 @@ class N8NAgentUI {
   sendAgentRequest(action, params = {}) {
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(
-        { action, params },
+        { target: 'n8nAgent', action, params },
         (response) => {
           if (chrome.runtime.lastError) {
             console.error('Erro na comunicação com o background script:', chrome.runtime.lastError);
