@@ -6,39 +6,60 @@
   <title>N8N Agent</title>
   <link rel="stylesheet" href="popup.css">
   <style>
-    .n8n-agent-section {
-      margin-bottom: 20px;
-      padding: 15px;
-      border-radius: 8px;
-      background-color: #f9f9f9;
+    .tabs {
+      display: flex;
+      background-color: #f1f1f1;
+      border-bottom: 1px solid #ccc;
+    }
+    
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .tab:hover {
+      background-color: #ddd;
+    }
+    
+    .tab.active {
+      background-color: #0078d7;
+      color: white;
     }
     
     .tab-content {
       display: none;
+      padding: 15px;
     }
     
     .tab-content.active {
       display: block;
     }
     
-    .tabs {
+    .loading-indicator {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    
+    .loading-indicator.active {
       display: flex;
-      margin-bottom: 15px;
     }
     
-    .tab {
-      padding: 8px 15px;
-      cursor: pointer;
-      border: 1px solid #ddd;
-      border-radius: 4px 4px 0 0;
-      background-color: #f1f1f1;
-      margin-right: 5px;
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #0078d7;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
     }
     
-    .tab.active {
-      background-color: #ff6d00;
-      color: white;
-      border-color: #ff6d00;
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
     
     .input-group {
@@ -54,114 +75,94 @@
     .input-group input, .input-group textarea {
       width: 100%;
       padding: 8px;
-      border: 1px solid #ddd;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
       border-radius: 4px;
     }
     
-    .input-group textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-    
-    button {
-      background-color: #ff6d00;
+    .action-button {
+      background-color: #4CAF50;
       color: white;
       border: none;
       padding: 8px 15px;
-      border-radius: 4px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 14px;
+      margin: 4px 2px;
       cursor: pointer;
-      font-weight: bold;
+      border-radius: 4px;
     }
     
-    button:hover {
-      background-color: #e65100;
-    }
-    
-    button:disabled {
-      background-color: #ccc;
+    .action-button:disabled {
+      background-color: #cccccc;
       cursor: not-allowed;
+    }
+    
+    .button-group {
+      margin-bottom: 15px;
+    }
+    
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
     }
     
     .agent-response {
       margin-top: 15px;
       padding: 10px;
-      border-left: 3px solid #ff6d00;
-      background-color: #fff;
+      background-color: #f9f9f9;
+      border-left: 4px solid #4CAF50;
     }
     
-    .sources {
-      margin-top: 10px;
-      font-size: 0.9em;
-      color: #666;
+    .message-container {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
     }
     
     .error-message {
-      color: #d32f2f;
+      color: #D8000C;
+      background-color: #FFD2D2;
       padding: 10px;
-      background-color: #ffebee;
+      margin: 10px 0;
       border-radius: 4px;
-      margin-top: 10px;
     }
     
-    .json-preview {
-      max-height: 300px;
-      overflow-y: auto;
-      background-color: #f5f5f5;
+    .success-message {
+      color: #4F8A10;
+      background-color: #DFF2BF;
       padding: 10px;
+      margin: 10px 0;
       border-radius: 4px;
-      font-family: monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
     }
     
-    #agent-loading-indicator {
+    .loading-indicator {
       display: none;
       text-align: center;
       margin: 10px 0;
     }
     
-    .spinner {
-      border: 4px solid rgba(255, 109, 0, 0.3);
-      border-radius: 50%;
-      border-top: 4px solid #ff6d00;
-      width: 30px;
-      height: 30px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    .connection-status {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 12px;
-      margin-left: 10px;
+    .status-container {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
     }
     
     .connected {
-      background-color: #c8e6c9;
-      color: #2e7d32;
+      color: #4CAF50;
+      font-weight: bold;
     }
     
     .disconnected {
-      background-color: #ffcdd2;
-      color: #c62828;
-    }
-    
-    .deploy-button {
-      margin: 10px 0;
-    }
-    
-    .deployment-result {
-      margin-top: 15px;
-      padding: 10px;
-      background-color: #e8f5e9;
-      border-radius: 4px;
+      color: #D8000C;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -188,149 +189,133 @@
             <label for="agent-question-input">Faça uma pergunta sobre N8N:</label>
             <textarea id="agent-question-input" placeholder="Ex: Como criar um trigger webhook no N8N?"></textarea>
           </div>
-          <button id="agent-submit-button">Perguntar</button>
+          <button id="agent-submit-button" class="action-button">Perguntar</button>
           
-          <div id="agent-loading-indicator">
+          <div id="agent-loading-indicator" class="loading-indicator">
             <div class="spinner"></div>
             <p>Processando...</p>
           </div>
           
+          <div id="assistant-error-container" class="message-container" style="display: none;"></div>
           <div id="agent-response-container"></div>
         </div>
       </div>
       
       <!-- Workflow Creation Tab -->
       <div id="workflow-tab" class="tab-content">
-        <div class="n8n-agent-section">
-          <div class="input-group">
-            <label for="workflow-description-input">Descreva o workflow que deseja criar:</label>
-            <textarea id="workflow-description-input" placeholder="Ex: Um workflow que monitora um email e envia notificações no Slack quando recebe anexos"></textarea>
-          </div>
-          <button id="create-workflow-button">Gerar Workflow</button>
-          
-          <div id="workflow-result-container"></div>
+        <h2>Workflow Generator</h2>
+        <div id="workflow-error-container" class="message-container" style="display: none;"></div>
+        <div class="input-group">
+          <label for="workflow-description-input">Descreva o workflow que deseja criar:</label>
+          <textarea id="workflow-description-input" rows="4" placeholder="Descreva o que você deseja que o workflow faça..."></textarea>
         </div>
+        <button id="create-workflow-button" class="action-button">Gerar Workflow</button>
+        <div id="workflow-success-container" class="message-container" style="display: none;"></div>
+        <div class="result-container">
+          <h3>JSON do Workflow</h3>
+          <textarea id="workflow-json-output" rows="10" readonly></textarea>
+        </div>
+        <button id="deploy-workflow-button" class="action-button">Implantar Workflow</button>
       </div>
       
       <!-- Docker Integration Tab -->
       <div id="docker-tab" class="tab-content">
-        <div class="n8n-agent-section">
-          <h3>Gerenciamento Docker N8N</h3>
-          <div class="input-group">
-            <label for="docker-port-input">Porta:</label>
-            <input type="text" id="docker-port-input" value="5678" placeholder="Ex: 5678">
-          </div>
-          <div class="input-group">
-            <label for="docker-data-path-input">Caminho para dados:</label>
-            <input type="text" id="docker-data-path-input" value="./n8n-data" placeholder="Ex: ./n8n-data">
-          </div>
-          <div class="docker-actions">
-            <button id="generate-docker-compose-button">Gerar Docker Compose</button>
-            <button id="check-container-status-button">Verificar Status</button>
-            <button id="start-container-button">Iniciar Container</button>
-            <button id="stop-container-button">Parar Container</button>
-          </div>
-          
-          <div id="docker-status-container" class="status-container">
-            <h4>Status do Container</h4>
-            <div id="docker-status" class="json-preview">Nenhuma informação disponível</div>
-          </div>
-          
-          <div id="docker-compose-container" class="compose-container">
-            <h4>Docker Compose</h4>
-            <div id="docker-compose-content" class="json-preview">Clique em "Gerar Docker Compose" para criar o arquivo</div>
-            <button id="copy-docker-compose-button" class="copy-button">Copiar</button>
-            <button id="save-docker-compose-button" class="save-button">Salvar como arquivo</button>
-          </div>
+        <h2>Docker Integration</h2>
+        <div id="docker-error-container" class="message-container" style="display: none;"></div>
+        <div class="input-group">
+          <label for="docker-port-input">Porta:</label>
+          <input type="text" id="docker-port-input" placeholder="5678" />
+        </div>
+        <div class="input-group">
+          <label for="docker-data-path-input">Caminho para dados:</label>
+          <input type="text" id="docker-data-path-input" placeholder="./n8n-data" />
+        </div>
+        <div class="button-group">
+          <button id="generate-docker-compose-button" class="action-button">Gerar Docker Compose</button>
+          <button id="check-container-status-button" class="action-button">Verificar Status</button>
+          <button id="start-container-button" class="action-button">Iniciar Container</button>
+          <button id="stop-container-button" class="action-button">Parar Container</button>
+        </div>
+        <div id="docker-success-container" class="message-container" style="display: none;"></div>
+        <h3>Status do Container</h3>
+        <div class="status-display">
+          <span>Status: </span>
+          <span id="docker-status-display" class="status-stopped">Parado</span>
+        </div>
+        <h3>Docker Compose</h3>
+        <textarea id="docker-compose-output" rows="10" readonly></textarea>
+        <div class="button-group">
+          <button id="copy-docker-compose-button" class="action-button">Copiar para área de transferência</button>
+          <button id="save-docker-compose-button" class="action-button">Salvar como arquivo</button>
         </div>
       </div>
       
       <!-- MCP Integration Tab -->
       <div id="mcp-tab" class="tab-content">
-        <div class="n8n-agent-section">
-          <h3>Integração MCP</h3>
-          
-          <div class="mcp-section">
-            <h4>MCP Playwright</h4>
-            <div class="input-group">
-              <label for="playwright-repo-path-input">Caminho para clonar repositório:</label>
-              <input type="text" id="playwright-repo-path-input" value="./mcp-playwright" placeholder="Ex: ./mcp-playwright">
-            </div>
-            <button id="clone-playwright-repo-button">Clonar Repositório</button>
-            
-            <div class="input-group">
-              <label for="test-workflow-input">Workflow para testar:</label>
-              <textarea id="test-workflow-input" placeholder="Cole o JSON do workflow aqui para gerar um teste"></textarea>
-            </div>
-            <button id="generate-test-script-button">Gerar Script de Teste</button>
-            
-            <div id="test-script-container" class="script-container">
-              <h4>Script de Teste</h4>
-              <div id="test-script-content" class="json-preview">Nenhum script gerado</div>
-              <button id="copy-test-script-button" class="copy-button">Copiar</button>
-              <button id="run-test-script-button" class="run-button">Executar Teste</button>
-            </div>
-          </div>
-          
-          <div class="mcp-section">
-            <h4>MCP File System</h4>
-            <div class="input-group">
-              <label for="command-input">Comando:</label>
-              <input type="text" id="command-input" placeholder="Ex: docker-compose up -d">
-            </div>
-            <button id="execute-command-button">Executar Comando</button>
-            
-            <div id="command-result-container" class="result-container">
-              <h4>Resultado do Comando</h4>
-              <div id="command-result" class="json-preview">Nenhum comando executado</div>
-            </div>
-          </div>
+        <h2>MCP Playwright Integration</h2>
+        <div id="mcp-error-container" class="message-container" style="display: none;"></div>
+        <div class="input-group">
+          <label for="playwright-repo-path-input">Caminho para clonar repositório:</label>
+          <input type="text" id="playwright-repo-path-input" placeholder="./mcp-playwright" />
         </div>
+        <button id="clone-playwright-repo-button" class="action-button">Clonar Repositório</button>
+        
+        <h3>Gerar Script de Teste</h3>
+        <div class="input-group">
+          <label for="mcp-test-description-input">Descrição do Teste:</label>
+          <textarea id="mcp-test-description-input" rows="4" placeholder="Descreva o teste que deseja gerar"></textarea>
+        </div>
+        <button id="generate-mcp-test-button" class="action-button">Gerar Script de Teste</button>
+        
+        <div id="mcp-success-container" class="message-container" style="display: none;"></div>
+        
+        <h3>Script de Teste</h3>
+        <textarea id="mcp-test-script-output" rows="10" readonly></textarea>
+        <div class="button-group">
+          <button id="copy-mcp-test-button" class="action-button">Copiar para área de transferência</button>
+          <button id="run-mcp-test-button" class="action-button">Executar Teste</button>
+        </div>
+        
+        <h3>Execute Command</h3>
+        <div class="input-group">
+          <label for="command-input">Comando:</label>
+          <input type="text" id="command-input" placeholder="Enter command to execute" />
+        </div>
+        <button id="execute-command-button" class="action-button">Executar</button>
+        
+        <h3>Command Result</h3>
+        <pre id="command-result"></pre>
       </div>
       
       <!-- Settings Tab -->
       <div id="settings-tab" class="tab-content">
-        <div class="n8n-agent-section">
-          <h3>Configurações da API N8N</h3>
-          <div class="input-group">
-            <label for="n8n-url-input">URL da instância N8N:</label>
-            <input type="text" id="n8n-url-input" placeholder="Ex: http://localhost:5678">
-          </div>
-          <div class="input-group">
-            <label for="n8n-api-key-input">Chave API N8N:</label>
-            <input type="password" id="n8n-api-key-input" placeholder="Sua chave API do N8N">
-          </div>
-          
-          <h3>Configurações MCP</h3>
-          <div class="input-group">
-            <label for="mcp-playwright-url-input">URL MCP Playwright:</label>
-            <input type="text" id="mcp-playwright-url-input" value="https://github.com/executeautomation/mcp-playwright.git">
-          </div>
-          
-          <button id="save-settings-button">Salvar Configurações</button>
-          <p>Status: <span id="connection-status" class="connection-status disconnected">Não conectado</span></p>
+        <h2>Settings</h2>
+        <div id="settings-error-container" class="message-container" style="display: none;"></div>
+        <div class="input-group">
+          <label for="n8n-url-input">URL da instância N8N:</label>
+          <input type="text" id="n8n-url-input" placeholder="http://localhost:5678" />
+        </div>
+        <div class="input-group">
+          <label for="n8n-api-key-input">Chave API N8N:</label>
+          <input type="password" id="n8n-api-key-input" placeholder="Sua chave API do N8N" />
+        </div>
+        <div class="input-group">
+          <label for="openrouter-api-key-input">Chave API OpenRouter:</label>
+          <input type="password" id="openrouter-api-key-input" placeholder="Sua chave API do OpenRouter" />
+        </div>
+        <div class="input-group">
+          <label for="mcp-playwright-url-input">URL MCP Playwright:</label>
+          <input type="text" id="mcp-playwright-url-input" placeholder="https://github.com/executeautomation/mcp-playwright.git" />
+        </div>
+        <button id="save-settings-button" class="action-button">Salvar Configurações</button>
+        <div class="status-container">
+          <span>Status: </span>
+          <span id="connection-status" class="disconnected">Não conectado</span>
         </div>
       </div>
     </main>
   </div>
   
   <script src="n8n-agent-ui.js"></script>
-  <script>
-    // Tab switching functionality
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        // Update active tab
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        
-        // Show corresponding content
-        const tabId = tab.getAttribute('data-tab');
-        document.querySelectorAll('.tab-content').forEach(content => {
-          content.classList.remove('active');
-        });
-        document.getElementById(`${tabId}-tab`).classList.add('active');
-      });
-    });
-  </script>
 </body>
 </html>

@@ -22,6 +22,7 @@
       <button class="tab-btn active" data-tab="home">Início</button>
       <button class="tab-btn" data-tab="create">Criar</button>
       <button class="tab-btn" data-tab="analyze">Analisar</button>
+      <button class="tab-btn" data-tab="docker">Docker</button>
       <button class="tab-btn" data-tab="settings">Configurações</button>
     </div>
 
@@ -171,6 +172,91 @@
           <h3>Resultado da Análise</h3>
           <div id="analysis-content"></div>
         </div>
+      </div>
+
+      <!-- Tab: Docker -->
+      <div id="docker" class="tab-pane">
+        <h2>Gerenciamento de Container Docker</h2>
+        
+        <div class="docker-status-panel">
+          <div class="status-header">
+            <h3>Status do Container</h3>
+            <span id="docker-status-indicator" class="status-badge">Verificando...</span>
+          </div>
+          
+          <div class="docker-controls">
+            <button id="start-container" class="action-btn">
+              <span class="icon">▶️</span>
+              <span>Iniciar</span>
+            </button>
+            <button id="stop-container" class="action-btn">
+              <span class="icon">⏹️</span>
+              <span>Parar</span>
+            </button>
+            <button id="restart-container" class="action-btn">
+              <span class="icon">🔄</span>
+              <span>Reiniciar</span>
+            </button>
+            <button id="refresh-status" class="action-btn">
+              <span class="icon">🔍</span>
+              <span>Atualizar Status</span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="docker-config-panel">
+          <h3>Configuração do Container</h3>
+          
+          <form id="docker-config-form">
+            <div class="form-group">
+              <label for="docker-port">Porta:</label>
+              <input type="number" id="docker-port" value="5678" min="1024" max="65535">
+            </div>
+            
+            <div class="form-group">
+              <label for="docker-data-path">Caminho dos Dados:</label>
+              <input type="text" id="docker-data-path" value="./n8n-data" placeholder="Caminho para armazenar dados do N8N">
+            </div>
+            
+            <div class="form-actions">
+              <button type="submit" class="primary-btn">Gerar Docker Compose</button>
+            </div>
+          </form>
+          
+          <div id="docker-compose-result" class="result-container hidden">
+            <div class="result-header">
+              <h3>Docker Compose</h3>
+              <div class="result-actions">
+                <button id="copy-docker-compose" class="icon-btn">📋</button>
+                <button id="save-docker-compose" class="secondary-btn">Salvar Arquivo</button>
+              </div>
+            </div>
+            <pre id="docker-compose-content"></pre>
+          </div>
+        </div>
+        
+        <div class="docker-logs-panel">
+          <div class="logs-header">
+            <h3>Logs do Container</h3>
+            <div class="logs-actions">
+              <button id="refresh-logs" class="secondary-btn">Atualizar Logs</button>
+              <button id="toggle-auto-refresh" class="secondary-btn">Auto-Refresh: Desligado</button>
+              <select id="log-lines-count">
+                <option value="50">50 linhas</option>
+                <option value="100" selected>100 linhas</option>
+                <option value="200">200 linhas</option>
+                <option value="500">500 linhas</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="logs-container">
+            <pre id="docker-logs">Logs não disponíveis. Inicie o container para visualizar logs.</pre>
+          </div>
+        </div>
+        
+        <div id="docker-error-container" class="error-message hidden"></div>
+        <div id="docker-success-container" class="success-message hidden"></div>
       </div>
 
       <!-- Tab: Settings -->

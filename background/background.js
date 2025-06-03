@@ -5,29 +5,39 @@
 
 import { OpenRouterAPI } from '../lib/openrouter-api.js';
 import { N8NAgentIntegration } from '../lib/n8n-agent-integration.js';
+import { N8NDockerIntegration } from '../lib/n8n-docker-integration.js';
+import { MCPIntegration } from '../lib/mcp-integration.js';
+import { storageManager } from '../lib/storage-manager.js';
 
-// Inicializar APIs
+// Inicializar APIs e integrações
 const openRouterAPI = new OpenRouterAPI();
-
-// Inicializar o N8N Agent
 const n8nAgentIntegration = new N8NAgentIntegration();
+const dockerIntegration = new N8NDockerIntegration();
+const mcpIntegration = new MCPIntegration();
+
+// Estado global da aplicação
+const appState = {
+  isConnected: false,
+  currentN8NInstance: null,
+  dockerStatus: null,
+  mcpStatus: {
+    playwrightRepoCloned: false,
+    lastCommand: null,
+    lastCommandResult: null
+  },
+  lastGeneratedWorkflow: null,
+  lastGeneratedDockerCompose: null,
+  lastGeneratedTestScript: null,
+  settings: null
+};
 
 // Configuração inicial
 chrome.runtime.onInstalled.addListener(async () => {
-  // Configurar storage padrão
-  const settings = await chrome.storage.local.get('settings');
-  if (!settings.settings) {
-    await chrome.storage.local.set({
-      settings: {
-        openRouterApiKey: '',
-        defaultModel: 'meta-llama/llama-3.1-8b-instruct:free',
-        theme: 'light',
-        n8nInstances: [],
-        n8nApiUrl: '',
-        n8nApiKey: ''
-      }
-    });
-  }
+  // Inicializar o gerenciador de armazenamento
+  const settings = await storageManager.initialize();
+  
+  // Carregar configurações para o estado da aplicação
+  appState.settings = settings;
 
   // Configurar menu de contexto
   chrome.contextMenus.create({
@@ -74,21 +84,62 @@ chrome.runtime.onInstalled.addListener(async () => {
   console.log('N8N Workflow Assistant instalado com sucesso!');
 });
 
+// Função para atualizar o estado e salvar configurações quando necessário
+async function updateState(updates, saveToStorage = false) {
+  Object.assign(appState, updates);
+  
+  if (saveToStorage && updates.settings) {
+    await storageManager.saveSettings(appState.settings);
+  }
+  
+  // Notificar todas as abas abertas sobre a mudança de estado
+  chrome.runtime.sendMessage({ action: 'stateUpdated', state: appState });
+}
+
 // Listener para mensagens da popup e content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Garantir que sendResponse possa ser chamado de forma assíncrona
   const asyncResponse = async () => {
     try {
+      // Mensagem direcionada ao agente N8N
+      if (message.target === 'n8nAgent') {
+        await handleN8NAgentMessages(message, sendResponse);
+        return;
+      }
+      
+      // Mensagens gerais da extensão
       if (message.action === 'setApiKey') {
         await openRouterAPI.setApiKey(message.apiKey);
+        await storageManager.setSetting('openRouterApiKey', message.apiKey);
+        await updateState({
+          settings: await storageManager.getSettings()
+        });
         sendResponse({ success: true });
       } 
       else if (message.action === 'getModels') {
+        // Verificar cache primeiro
+        const cachedModels = await storageManager.getCacheItem('availableModels');
+        if (cachedModels) {
+          sendResponse({ success: true, models: cachedModels, fromCache: true });
+          return;
+        }
+        
         const models = await openRouterAPI.getAvailableModels();
+        // Armazenar no cache por 1 dia
+        await storageManager.setCacheItem('availableModels', models, 86400000);
         sendResponse({ success: true, models });
       } 
       else if (message.action === 'getUsageStats') {
+        // Verificar cache primeiro (com TTL curto para estatísticas)
+        const cachedStats = await storageManager.getCacheItem('usageStats');
+        if (cachedStats) {
+          sendResponse({ success: true, stats: cachedStats, fromCache: true });
+          return;
+        }
+        
         const stats = await openRouterAPI.getUsageStats();
+        // Armazenar no cache por 1 hora
+        await storageManager.setCacheItem('usageStats', stats, 3600000);
         sendResponse({ success: true, stats });
       } 
       else if (message.action === 'generateWorkflow') {
@@ -96,6 +147,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           message.description, 
           message.requirements
         );
+        await updateState({ lastGeneratedWorkflow: workflow });
         sendResponse({ success: true, workflow });
       } 
       else if (message.action === 'analyzeWorkflow') {
@@ -108,6 +160,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           message.context
         );
         sendResponse({ success: true, suggestions });
+      }
+      else if (message.action === 'getAppState') {
+        // Atualizar o estado com as configurações mais recentes antes de enviar
+        appState.settings = await storageManager.getSettings();
+        sendResponse({ success: true, state: appState });
+      }
+      else if (message.action === 'clearCache') {
+        await storageManager.clearCache(message.key || null);
+        sendResponse({ success: true });
       }
       else {
         sendResponse({ success: false, error: 'Ação desconhecida' });
@@ -125,6 +186,114 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   asyncResponse();
   return true;
 });
+
+// Handler para mensagens específicas do N8N Agent
+async function handleN8NAgentMessages(message, sendResponse) {
+  try {
+    const { action, params } = message;
+    
+    // Ações relacionadas ao N8N Agent
+    if (action === 'answerQuestion') {
+      const response = await n8nAgentIntegration.answerQuestion(params.question, params.context);
+      sendResponse(response);
+    }
+    else if (action === 'createWorkflow') {
+      const workflow = await n8nAgentIntegration.createWorkflow(params.description, params.requirements);
+      appState.lastGeneratedWorkflow = workflow;
+      sendResponse(workflow);
+    }
+    else if (action === 'deployWorkflow') {
+      const result = await n8nAgentIntegration.deployWorkflow(params.workflow, params.activate);
+      sendResponse(result);
+    }
+    else if (action === 'testConnection') {
+      const result = await n8nAgentIntegration.testConnection();
+      appState.isConnected = result.success;
+      sendResponse(result);
+    }
+    else if (action === 'setApiConfig') {
+      await n8nAgentIntegration.setApiConfig(params.apiUrl, params.apiKey);
+      
+      // Atualizar configurações individualmente
+      await storageManager.setSetting('n8nApiUrl', params.apiUrl);
+      await storageManager.setSetting('n8nApiKey', params.apiKey);
+      
+      // Configurar a chave API do OpenRouter
+      if (params.openrouterApiKey) {
+        await openRouterAPI.setApiKey(params.openrouterApiKey);
+        await storageManager.setSetting('openrouterApiKey', params.openrouterApiKey);
+      }
+      
+      if (params.mcpPlaywrightUrl) {
+        await storageManager.setSetting('mcpConfig.playwrightRepoUrl', params.mcpPlaywrightUrl);
+      }
+      
+      // Atualizar o estado da aplicação
+      await updateState({
+        settings: await storageManager.getSettings()
+      });
+      
+      sendResponse({ success: true });
+    }
+    
+    // Ações relacionadas ao Docker
+    else if (action === 'generateDockerCompose') {
+      const dockerComposeContent = await dockerIntegration.generateDockerComposeFile(params);
+      appState.lastGeneratedDockerCompose = dockerComposeContent;
+      sendResponse({ success: true, dockerComposeContent });
+    }
+    else if (action === 'checkContainerStatus') {
+      const status = await dockerIntegration.getContainerStatus();
+      appState.dockerStatus = status;
+      sendResponse({ success: true, status });
+    }
+    else if (action === 'startContainer') {
+      const result = await dockerIntegration.startContainer(params.port);
+      sendResponse(result);
+    }
+    else if (action === 'stopContainer') {
+      const result = await dockerIntegration.stopContainer();
+      sendResponse(result);
+    }
+    else if (action === 'saveDockerCompose') {
+      const result = await dockerIntegration.saveDockerComposeFile(params.content, params.path);
+      sendResponse(result);
+    }
+    
+    // Ações relacionadas ao MCP
+    else if (action === 'clonePlaywrightRepo') {
+      const result = await mcpIntegration.clonePlaywrightRepo(params.path, params.url);
+      appState.mcpStatus.playwrightRepoCloned = result.success;
+      sendResponse(result);
+    }
+    else if (action === 'generateTestScript') {
+      const testScript = await mcpIntegration.generatePlaywrightTest(params.workflow, params.n8nUrl);
+      appState.lastGeneratedTestScript = testScript;
+      sendResponse({ success: true, testScript });
+    }
+    else if (action === 'runPlaywrightTest') {
+      const result = await mcpIntegration.runPlaywrightTest(params.script);
+      appState.mcpStatus.lastCommand = 'runPlaywrightTest';
+      appState.mcpStatus.lastCommandResult = result;
+      sendResponse(result);
+    }
+    else if (action === 'executeCommand') {
+      const result = await mcpIntegration.executeCommand(params.command);
+      appState.mcpStatus.lastCommand = params.command;
+      appState.mcpStatus.lastCommandResult = result;
+      sendResponse(result);
+    }
+    else {
+      sendResponse({ success: false, error: 'Ação desconhecida para o N8N Agent' });
+    }
+  } catch (error) {
+    console.error('Erro ao processar mensagem do N8N Agent:', error);
+    sendResponse({ 
+      success: false, 
+      error: error.message || 'Erro desconhecido' 
+    });
+  }
+}
 
 // Listener para cliques no menu de contexto
 chrome.contextMenus.onClicked.addListener((info, tab) => {

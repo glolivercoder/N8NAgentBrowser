@@ -299,4 +299,96 @@ Esta integração permite que o agente N8N possa:
 
 ---
 
+## Ordem de Desenvolvimento Recomendada
+
+### 1. Configuração Básica e Infraestrutura (Prioridade Alta)
+
+1. **Implementar background service worker básico**
+   - Configurar o listener de mensagens para comunicação entre componentes
+   - Implementar gerenciamento de estado básico
+   - Garantir que o service worker permaneça ativo quando necessário
+
+2. **Criar sistema de armazenamento para configurações**
+   - Implementar storage.local para dados sensíveis (API keys)
+   - Criar funções para salvar/carregar configurações
+
+3. **Finalizar interface popup inicial**
+   - Implementar navegação básica entre abas
+   - Garantir que os elementos UI já implementados funcionem corretamente
+
+### 2. Integração com OpenRouter (Prioridade Alta)
+
+1. **Adicionar interface para configuração da API key**
+   - Criar formulário seguro para armazenamento da chave
+   - Implementar validação da chave
+
+2. **Implementar cache para reduzir chamadas à API**
+   - Armazenar resultados frequentes para economizar tokens
+   - Implementar estratégia de invalidação de cache
+
+### 3. Funcionalidades Principais Essenciais (Prioridade Alta)
+
+1. **Implementar geração de workflows a partir de descrições**
+   - Conectar a interface com a API OpenRouter
+   - Garantir que o JSON gerado seja válido para o N8N
+
+2. **Criar analisador básico de workflows existentes**
+   - Implementar parser para workflows do N8N
+   - Criar visualização simplificada da estrutura
+
+### 4. Refinamento da Integração com Docker (Prioridade Média)
+
+1. **Implementar logs e monitoramento de containers**
+   - Adicionar visualização de logs do container N8N
+   - Implementar notificações de status
+
+### 5. Finalização da Integração com MCP (Prioridade Média)
+
+1. **Adicionar suporte a operações de arquivo para configurações**
+   - Implementar leitura/escrita de arquivos de configuração
+   - Garantir tratamento de erros adequado
+
+### 6. Testes e Validação (Prioridade Alta)
+
+1. **Implementar testes unitários para componentes críticos**
+   - Testar integração com OpenRouter
+   - Testar geração de workflows
+   - Testar comunicação com Docker
+
+2. **Criar testes de integração para fluxos principais**
+   - Testar fluxo completo: configuração → geração → execução
+
+### 7. Segurança e Robustez (Prioridade Alta)
+
+1. **Revisar permissões no manifest.json**
+   - Garantir que apenas as permissões necessárias estejam solicitadas
+
+2. **Implementar validação de entrada em todos os campos**
+   - Sanitizar inputs do usuário
+   - Prevenir injeção de código
+
+3. **Adicionar tratamento de erros abrangente**
+   - Implementar fallbacks para falhas de API
+   - Criar mensagens de erro amigáveis
+
+### 8. Refinamentos de UX/UI (Prioridade Média)
+
+1. **Implementar indicadores de carregamento**
+   - Adicionar feedback visual para operações longas
+
+2. **Melhorar consistência visual**
+   - Alinhar com a identidade do N8N
+
+### 9. Documentação e Finalização (Prioridade Média)
+
+1. **Atualizar documentação**
+   - Completar README com instruções de instalação e uso
+   - Documentar APIs e componentes principais
+
+2. **Preparar para distribuição**
+   - Configurar sistema de build (webpack/rollup)
+   - Criar pacote para Chrome Web Store
+
+---
+
 Desenvolvido com ❤️ para a comunidade N8N

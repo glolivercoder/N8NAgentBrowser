@@ -398,6 +398,102 @@ pre {
   display: none !important;
 }
 
+/* Docker Tab Styles */
+.docker-status-panel,
+.docker-config-panel,
+.docker-logs-panel {
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  background-color: var(--text-light);
+  color: white;
+}
+
+.status-badge.running {
+  background-color: var(--success-color);
+}
+
+.status-badge.stopped {
+  background-color: var(--error-color);
+}
+
+.status-badge.starting {
+  background-color: var(--warning-color);
+}
+
+.docker-controls {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+}
+
+.logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.logs-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.logs-container {
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+}
+
+#docker-logs {
+  padding: var(--spacing-md);
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.error-message {
+  background-color: rgba(255, 73, 73, 0.1);
+  border: 1px solid var(--error-color);
+  color: var(--error-color);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  margin-top: var(--spacing-md);
+}
+
+.success-message {
+  background-color: rgba(19, 206, 102, 0.1);
+  border: 1px solid var(--success-color);
+  color: var(--success-color);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  margin-top: var(--spacing-md);
+}
+
 /* Scrollbar personalizada */
 ::-webkit-scrollbar {
   width: 8px;
