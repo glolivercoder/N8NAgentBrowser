@@ -91,46 +91,30 @@ class N8NAgentUI {
     this.elements.clonePlaywrightRepoButton = document.getElementById('clone-playwright-repo-button');
     this.elements.runMcpTestButton = document.getElementById('run-mcp-test-button');
     this.elements.mcpCommandInput = document.getElementById('mcp-command-input');
-    
-    // MCP integration elements
-    this.elements.mcpTestDescriptionInput = document.getElementById('mcp-test-description-input');
-    this.elements.generateMcpTestButton = document.getElementById('generate-mcp-test-button');
-    this.elements.mcpTestScriptOutput = document.getElementById('mcp-test-script-output');
-    this.elements.playwrightRepoPathInput = document.getElementById('playwright-repo-path-input');
-    this.elements.clonePlaywrightRepoButton = document.getElementById('clone-playwright-repo-button');
-    this.elements.runMcpTestButton = document.getElementById('run-mcp-test-button');
-    this.elements.mcpCommandInput = document.getElementById('mcp-command-input');
+    this.elements.copyMcpTestButton = document.getElementById('copy-mcp-test-button');
     this.elements.executeCommandButton = document.getElementById('execute-command-button');
     this.elements.mcpCommandOutput = document.getElementById('mcp-command-output');
     this.elements.mcpErrorContainer = document.getElementById('mcp-error-container');
     this.elements.mcpSuccessContainer = document.getElementById('mcp-success-container');
     
     // Settings elements
-    this.elements.n8nUrlInput = document.getElementById('n8n-url-input');
-    this.elements.n8nApiKeyInput = document.getElementById('n8n-api-key-input');
-    this.elements.openrouterApiKeyInput = document.getElementById('openrouter-api-key-input');
-    this.elements.mcpPlaywrightUrlInput = document.getElementById('mcp-playwright-url-input');
-    this.elements.saveSettingsButton = document.getElementById('save-settings-button');
-    this.elements.connectionStatus = document.getElementById('connection-status');
+    this.elements.settingsForm = document.getElementById('settings-form');
+    this.elements.openrouterApiKeyInput = document.getElementById('openrouter-api-key');
+    this.elements.defaultModelSelect = document.getElementById('default-model');
+    this.elements.themeSelect = document.getElementById('theme');
+    this.elements.addInstanceButton = document.getElementById('add-instance');
+    this.elements.n8nInstancesContainer = document.getElementById('n8n-instances');
+    this.elements.apiUsageStats = document.getElementById('api-usage-stats');
     this.elements.settingsErrorContainer = document.getElementById('settings-error-container');
     this.elements.settingsSuccessContainer = document.getElementById('settings-success-container');
+    this.elements.testIntegrationButton = document.getElementById('test-integration-button');
+    this.elements.testDockerIntegrationButton = document.getElementById('test-docker-integration-button');
+    this.elements.testOpenRouterIntegrationButton = document.getElementById('test-openrouter-integration-button');
+    this.elements.testResultsContainer = document.getElementById('test-results');
     
-    // Containers de erro e sucesso para cada aba
-    this.elements.errorContainers = {
-      docker: this.elements.dockerErrorContainer,
-      mcp: this.elements.mcpErrorContainer,
-      workflow: this.elements.workflowErrorContainer,
-      settings: this.elements.settingsErrorContainer,
-      assistant: document.getElementById('assistant-error-container')
-    };
-    
-    this.elements.successContainers = {
-      docker: this.elements.dockerSuccessContainer,
-      mcp: this.elements.mcpSuccessContainer,
-      workflow: this.elements.workflowSuccessContainer,
-      settings: this.elements.settingsSuccessContainer,
-      assistant: document.getElementById('assistant-success-container')
-    };
+    // A atribuição anterior para this.elements.errorContainers e this.elements.successContainers (linhas 62-78)
+    // já lida corretamente com os containers de todas as abas, incluindo 'docker'.
+    // A reatribuição abaixo era redundante e causava erro pois this.elements.dockerErrorContainer não estava definido.
   }
 
   setupEventListeners() {
@@ -227,6 +211,9 @@ class N8NAgentUI {
     
     // Settings
     this.elements.saveSettingsButton?.addEventListener('click', () => this.saveSettings());
+    this.elements.testIntegrationButton?.addEventListener('click', () => this.testBackgroundIntegration());
+    this.elements.testDockerIntegrationButton?.addEventListener('click', () => this.testDockerIntegration());
+    this.elements.testOpenRouterIntegrationButton?.addEventListener('click', () => this.testOpenRouterIntegration());
     
     // Listen for state updates from background script
     chrome.runtime.onMessage.addListener((message) => {
@@ -514,7 +501,7 @@ class N8NAgentUI {
     
     // Mostrar/ocultar conteúdo das abas
     this.elements.tabContents?.forEach(content => {
-      const contentTabId = content.getAttribute('data-tab');
+      const contentTabId = content.id;
       if (contentTabId === tabId) {
         content.style.display = 'block';
       } else {
@@ -998,11 +985,57 @@ class N8NAgentUI {
    * Salva as configurações da extensão
    * @returns {Promise<void>}
    */
+  /**
+   * Carrega as configurações da extensão e atualiza a interface
+   * @returns {Promise<void>}
+   */
+  async loadSettings() {
+    try {
+      this.setLoading(true);
+      const config = await this.sendAgentRequest('getApiConfig');
+      
+      if (config) {
+        // Atualizar campos de entrada com os valores carregados
+        if (this.elements.n8nUrlInput) {
+          this.elements.n8nUrlInput.value = config.apiUrl || '';
+        }
+        
+        if (this.elements.n8nApiKeyInput) {
+          this.elements.n8nApiKeyInput.value = config.apiKey || '';
+        }
+        
+        if (this.elements.openrouterApiKeyInput) {
+          this.elements.openrouterApiKeyInput.value = config.openrouterApiKey || '';
+        }
+        
+        if (this.elements.mcpPlaywrightUrlInput) {
+          this.elements.mcpPlaywrightUrlInput.value = config.mcpPlaywrightUrl || '';
+        }
+        
+        // Atualizar valores de Docker se existirem
+        if (config.dockerPort && this.elements.dockerPort) {
+          this.elements.dockerPort.value = config.dockerPort;
+        }
+        
+        if (config.dockerDataPath && this.elements.dockerDataPath) {
+          this.elements.dockerDataPath.value = config.dockerDataPath;
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error);
+      this.displayError('settings', 'Falha ao carregar configurações: ' + error.message);
+    } finally {
+      this.setLoading(false);
+    }
+  }
+  
   async saveSettings() {
     const n8nUrl = this.elements.n8nUrlInput?.value.trim();
     const n8nApiKey = this.elements.n8nApiKeyInput?.value.trim();
     const openrouterApiKey = this.elements.openrouterApiKeyInput?.value.trim();
     const mcpPlaywrightUrl = this.elements.mcpPlaywrightUrlInput?.value.trim();
+    const dockerPort = this.elements.dockerPort?.value.trim();
+    const dockerDataPath = this.elements.dockerDataPath?.value.trim();
     
     if (!n8nUrl) {
       this.displayError('settings', 'Por favor, informe a URL da instância N8N');
@@ -1020,7 +1053,9 @@ class N8NAgentUI {
         apiUrl: n8nUrl,
         apiKey: n8nApiKey,
         openrouterApiKey: openrouterApiKey,
-        mcpPlaywrightUrl: mcpPlaywrightUrl
+        mcpPlaywrightUrl: mcpPlaywrightUrl,
+        dockerPort: dockerPort,
+        dockerDataPath: dockerDataPath
       });
       
       this.displaySuccess('settings', 'Configurações salvas com sucesso');
@@ -1245,6 +1280,213 @@ class N8NAgentUI {
    */
   sendBackgroundRequest(action, params = {}) {
     return this.sendAgentRequest(action, params);
+  }
+
+  /**
+   * Importa dinamicamente os módulos de teste
+   * @returns {Promise<Object>} Módulos de teste
+   */
+  async importTestModules() {
+    try {
+      // Usar caminhos relativos a partir do contexto da extensão
+      const integrationTestsModule = await import(chrome.runtime.getURL('tests/integration-tests.js'));
+      const dockerTestsModule = await import(chrome.runtime.getURL('tests/docker-integration-tests.js'));
+      const openRouterTestsModule = await import(chrome.runtime.getURL('tests/openrouter-integration-tests.js'));
+      
+      // Tentar obter a classe exportada como default ou pelo nome
+      return {
+        IntegrationTests: integrationTestsModule.default || integrationTestsModule.N8NIntegrationTests,
+        DockerTests: dockerTestsModule.default || dockerTestsModule.DockerIntegrationTests,
+        OpenRouterTests: openRouterTestsModule.default || openRouterTestsModule.OpenRouterIntegrationTests
+      };
+    } catch (error) {
+      console.error('Erro ao importar módulos de teste:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Testa a integração entre UI e background script
+   * @returns {Promise<void>}
+   */
+  async testBackgroundIntegration() {
+    try {
+      this.setLoading(true);
+      this.displaySuccess('settings', 'Testando integração com background script...');
+      
+      // Teste básico de ping
+      const response = await this.sendAgentRequest('ping');
+      if (response && response.success) {
+        this.displaySuccess('settings', 'Teste básico de comunicação bem-sucedido!');
+        console.log('Teste básico bem-sucedido:', response);
+        
+        // Executar testes de integração completos
+        try {
+          const { IntegrationTests } = await this.importTestModules();
+          const testsInstance = new IntegrationTests();
+          
+          // Exibir mensagem de que os testes estão sendo executados
+          this.elements.testResultsContainer.innerHTML = '<div class="test-running">Executando testes de integração...</div>';
+          
+          // Executar os testes e exibir os resultados
+          await testsInstance.runTestsAndDisplayResults(this.elements.testResultsContainer);
+        } catch (testError) {
+          console.error('Erro ao executar testes de integração:', testError);
+          this.elements.testResultsContainer.innerHTML = `
+            <div class="test-error">
+              <h3>Erro ao executar testes</h3>
+              <p>${testError.message}</p>
+              <pre>${testError.stack}</pre>
+            </div>
+          `;
+        }
+      } else {
+        this.displayError('settings', 'Falha no teste básico de comunicação: resposta inválida');
+        console.error('Falha no teste básico:', response);
+        this.elements.testResultsContainer.innerHTML = `
+          <div class="test-error">
+            <h3>Falha no teste básico de comunicação</h3>
+            <p>Não foi possível estabelecer comunicação com o background script.</p>
+            <p>Verifique se a extensão está instalada corretamente.</p>
+          </div>
+        `;
+      }
+    } catch (error) {
+      console.error('Erro no teste de integração:', error);
+      this.displayError('settings', 'Erro no teste de integração: ' + error.message);
+      this.elements.testResultsContainer.innerHTML = `
+        <div class="test-error">
+          <h3>Erro no teste de integração</h3>
+          <p>${error.message}</p>
+          <pre>${error.stack}</pre>
+        </div>
+      `;
+    } finally {
+      this.setLoading(false);
+    }
+  }
+
+  /**
+   * Testa a integração com Docker
+   * @returns {Promise<void>}
+   */
+  async testDockerIntegration() {
+    try {
+      this.setLoading(true);
+      this.displaySuccess('settings', 'Testando integração com Docker...');
+      
+      // Verificar se o Docker está disponível
+      const statusResponse = await this.sendAgentRequest('checkDockerStatus');
+      if (statusResponse) {
+        this.displaySuccess('settings', 'Comunicação com Docker estabelecida!');
+        console.log('Teste de comunicação com Docker bem-sucedido:', statusResponse);
+        
+        // Executar testes de integração do Docker
+        try {
+          const { DockerTests } = await this.importTestModules();
+          const testsInstance = new DockerTests();
+          
+          // Exibir mensagem de que os testes estão sendo executados
+          this.elements.testResultsContainer.innerHTML = '<div class="test-running">Executando testes de integração do Docker...</div>';
+          
+          // Executar os testes e exibir os resultados
+          await testsInstance.runDockerTests();
+          await testsInstance.runTestsAndDisplayResults(this.elements.testResultsContainer);
+        } catch (testError) {
+          console.error('Erro ao executar testes de integração do Docker:', testError);
+          this.elements.testResultsContainer.innerHTML = `
+            <div class="test-error">
+              <h3>Erro ao executar testes do Docker</h3>
+              <p>${testError.message}</p>
+              <pre>${testError.stack}</pre>
+            </div>
+          `;
+        }
+      } else {
+        this.displayError('settings', 'Falha na comunicação com Docker: resposta inválida');
+        console.error('Falha na comunicação com Docker:', statusResponse);
+        this.elements.testResultsContainer.innerHTML = `
+          <div class="test-error">
+            <h3>Falha na comunicação com Docker</h3>
+            <p>Não foi possível estabelecer comunicação com o Docker.</p>
+            <p>Verifique se o Docker está instalado e em execução no sistema.</p>
+          </div>
+        `;
+      }
+    } catch (error) {
+      console.error('Erro no teste de integração do Docker:', error);
+      this.displayError('settings', 'Erro no teste de integração do Docker: ' + error.message);
+      this.elements.testResultsContainer.innerHTML = `
+        <div class="test-error">
+          <h3>Erro no teste de integração do Docker</h3>
+          <p>${error.message}</p>
+          <pre>${error.stack}</pre>
+        </div>
+      `;
+    } finally {
+      this.setLoading(false);
+    }
+  }
+
+  /**
+   * Testa a integração com OpenRouter
+   * @returns {Promise<void>}
+   */
+  async testOpenRouterIntegration() {
+    try {
+      this.setLoading(true);
+      this.displaySuccess('settings', 'Testando integração com OpenRouter...');
+      
+      // Teste básico de ping
+      const response = await this.sendAgentRequest('ping');
+      if (response && response.success) {
+        this.displaySuccess('settings', 'Teste básico de comunicação bem-sucedido!');
+        console.log('Teste básico bem-sucedido:', response);
+        
+        // Executar testes de integração do OpenRouter
+        try {
+          const { OpenRouterTests } = await this.importTestModules();
+          const testsInstance = new OpenRouterTests();
+          
+          // Exibir mensagem de que os testes estão sendo executados
+          this.elements.testResultsContainer.innerHTML = '<div class="test-running">Executando testes de integração do OpenRouter...</div>';
+          
+          // Executar os testes e exibir os resultados
+          await testsInstance.runTestsAndDisplayResults(this.elements.testResultsContainer);
+        } catch (testError) {
+          console.error('Erro ao executar testes de integração do OpenRouter:', testError);
+          this.elements.testResultsContainer.innerHTML = `
+            <div class="test-error">
+              <h3>Erro ao executar testes do OpenRouter</h3>
+              <p>${testError.message}</p>
+              <pre>${testError.stack}</pre>
+            </div>
+          `;
+        }
+      } else {
+        this.displayError('settings', 'Falha no teste básico de comunicação: resposta inválida');
+        console.error('Falha no teste básico:', response);
+        this.elements.testResultsContainer.innerHTML = `
+          <div class="test-error">
+            <h3>Falha no teste básico de comunicação</h3>
+            <p>Não foi possível estabelecer comunicação com o background script.</p>
+            <p>Verifique se a extensão está instalada corretamente.</p>
+          </div>
+        `;
+      }
+    } catch (error) {
+      console.error('Erro no teste de integração do OpenRouter:', error);
+      this.displayError('settings', 'Erro no teste de integração do OpenRouter: ' + error.message);
+      this.elements.testResultsContainer.innerHTML = `
+        <div class="test-error">
+          <h3>Erro no teste de integração do OpenRouter</h3>
+          <p>${error.message}</p>
+          <pre>${error.stack}</pre>
+        </div>
+      `;
+    } finally {
+      this.setLoading(false);
+    }
   }
 
   // Docker Integration Methods

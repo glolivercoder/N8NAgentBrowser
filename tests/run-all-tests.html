@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N8N Browser Agents - Execuu00e7u00e3o Completa de Testes</title>
+  <style>
+    :root {
+      --primary-color: #ff6d00;
+      --secondary-color: #0288d1;
+      --success-color: #4caf50;
+      --warning-color: #ff9800;
+      --error-color: #f44336;
+      --background-color: #f5f5f5;
+      --card-background: #ffffff;
+      --text-color: #333333;
+      --border-color: #e0e0e0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--background-color);
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin: 0;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #e65100;
+    }
+
+    button:disabled {
+      background-color: #ffab91;
+      cursor: not-allowed;
+    }
+
+    .secondary-button {
+      background-color: var(--secondary-color);
+    }
+
+    .secondary-button:hover {
+      background-color: #01579b;
+    }
+
+    .report-container {
+      background-color: var(--card-background);
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .summary {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .summary-card {
+      flex: 1;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      margin: 0 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .summary-card h3 {
+      margin-top: 0;
+      font-size: 16px;
+    }
+
+    .summary-card .number {
+      font-size: 32px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .total {
+      background-color: #e3f2fd;
+      color: #0d47a1;
+    }
+
+    .passed {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .failed {
+      background-color: #ffebee;
+      color: #c62828;
+    }
+
+    .category-results {
+      margin-top: 30px;
+    }
+
+    .category {
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      background-color: #f5f5f5;
+      cursor: pointer;
+    }
+
+    .category-name {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .category-stats {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .stat-passed {
+      color: var(--success-color);
+    }
+
+    .stat-failed {
+      color: var(--error-color);
+    }
+
+    .category-details {
+      padding: 0 15px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+
+    .category-details.expanded {
+      max-height: 1000px;
+      padding: 15px;
+    }
+
+    .test-item {
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .test-success {
+      background-color: rgba(76, 175, 80, 0.1);
+    }
+
+    .test-error {
+      background-color: rgba(244, 67, 54, 0.1);
+    }
+
+    .test-name {
+      font-weight: 500;
+    }
+
+    .test-message {
+      margin-top: 5px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .progress-bar {
+      height: 8px;
+      background-color: #e0e0e0;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background-color: var(--primary-color);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .status-message {
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    .log-container {
+      background-color: #263238;
+      color: #eeffff;
+      border-radius: 8px;
+      padding: 15px;
+      height: 200px;
+      overflow-y: auto;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .log-entry {
+      margin-bottom: 5px;
+      display: flex;
+    }
+
+    .log-timestamp {
+      color: #b2ff59;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    .log-info {
+      color: #82aaff;
+    }
+
+    .log-success {
+      color: #c3e88d;
+    }
+
+    .log-warning {
+      color: #ffcb6b;
+    }
+
+    .log-error {
+      color: #f07178;
+    }
+
+    @media (max-width: 768px) {
+      .summary {
+        flex-direction: column;
+      }
+
+      .summary-card {
+        margin: 5px 0;
+      }
+
+      .category-stats {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>N8N Browser Agents - Relatu00f3rio de Testes</h1>
+      <div class="controls">
+        <button id="run-all-tests">Executar Todos os Testes</button>
+        <button id="export-report" class="secondary-button" disabled>Exportar Relatu00f3rio</button>
+      </div>
+    </header>
+
+    <div class="status-message" id="status-message">Clique em "Executar Todos os Testes" para iniciar.</div>
+    
+    <div class="progress-bar">
+      <div class="progress-bar-fill" id="progress-bar-fill"></div>
+    </div>
+
+    <div class="report-container" id="report-container" style="display: none;">
+      <div class="summary" id="summary">
+        <div class="summary-card total">
+          <h3>Total de Testes</h3>
+          <div class="number" id="total-tests">0</div>
+        </div>
+        <div class="summary-card passed">
+          <h3>Testes Passados</h3>
+          <div class="number" id="passed-tests">0</div>
+          <div id="pass-percentage">0%</div>
+        </div>
+        <div class="summary-card failed">
+          <h3>Testes Falhos</h3>
+          <div class="number" id="failed-tests">0</div>
+          <div id="fail-percentage">0%</div>
+        </div>
+      </div>
+
+      <div class="category-results" id="category-results">
+        <!-- Categorias de testes seru00e3o inseridas aqui dinamicamente -->
+      </div>
+    </div>
+
+    <h2>Log de Execuu00e7u00e3o</h2>
+    <div class="log-container" id="log-container">
+      <!-- Entradas de log seru00e3o inseridas aqui dinamicamente -->
+    </div>
+  </div>
+
+  <script type="module">
+    import TestRunner from './run-all-tests.js';
+
+    // Elementos da UI
+    const runAllTestsBtn = document.getElementById('run-all-tests');
+    const exportReportBtn = document.getElementById('export-report');
+    const statusMessage = document.getElementById('status-message');
+    const progressBarFill = document.getElementById('progress-bar-fill');
+    const reportContainer = document.getElementById('report-container');
+    const totalTestsEl = document.getElementById('total-tests');
+    const passedTestsEl = document.getElementById('passed-tests');
+    const failedTestsEl = document.getElementById('failed-tests');
+    const passPercentageEl = document.getElementById('pass-percentage');
+    const failPercentageEl = document.getElementById('fail-percentage');
+    const categoryResultsEl = document.getElementById('category-results');
+    const logContainer = document.getElementById('log-container');
+
+    // Instu00e2ncia do executor de testes
+    const testRunner = new TestRunner();
+
+    // Interceptar console.log para exibir no log container
+    const originalConsoleLog = console.log;
+    const originalConsoleError = console.error;
+    const originalConsoleWarn = console.warn;
+    const originalConsoleInfo = console.info;
+
+    console.log = function(...args) {
+      addLogEntry(args.join(' '), 'info');
+      originalConsoleLog.apply(console, args);
+    };
+
+    console.error = function(...args) {
+      addLogEntry(args.join(' '), 'error');
+      originalConsoleError.apply(console, args);
+    };
+
+    console.warn = function(...args) {
+      addLogEntry(args.join(' '), 'warning');
+      originalConsoleWarn.apply(console, args);
+    };
+
+    console.info = function(...args) {
+      addLogEntry(args.join(' '), 'info');
+      originalConsoleInfo.apply(console, args);
+    };
+
+    // Funu00e7u00e3o para adicionar entrada de log
+    function addLogEntry(message, type = 'info') {
+      const logEntry = document.createElement('div');
+      logEntry.className = `log-entry log-${type}`;
+      
+      const timestamp = document.createElement('span');
+      timestamp.className = 'log-timestamp';
+      timestamp.textContent = new Date().toLocaleTimeString();
+      
+      const content = document.createElement('span');
+      content.className = 'log-content';
+      content.textContent = message;
+      
+      logEntry.appendChild(timestamp);
+      logEntry.appendChild(content);
+      
+      logContainer.appendChild(logEntry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    // Executar todos os testes
+    runAllTestsBtn.addEventListener('click', async () => {
+      try {
+        // Resetar UI
+        reportContainer.style.display = 'none';
+        categoryResultsEl.innerHTML = '';
+        logContainer.innerHTML = '';
+        progressBarFill.style.width = '0%';
+        exportReportBtn.disabled = true;
+        
+        // Desabilitar botu00e3o e mostrar loading
+        runAllTestsBtn.disabled = true;
+        runAllTestsBtn.innerHTML = '<div class="loading"></div> Executando...';
+        statusMessage.textContent = 'Executando testes...';
+        
+        addLogEntry('Iniciando execuu00e7u00e3o de todos os testes...', 'info');
+        
+        // Simular progresso
+        startProgressAnimation();
+        
+        // Executar testes
+        const results = await testRunner.runAllTests();
+        
+        // Atualizar UI com resultados
+        updateReportUI(results);
+        
+        // Completar progresso
+        progressBarFill.style.width = '100%';
+        statusMessage.textContent = 'Testes concluu00eddos!';
+        
+        // Habilitar exportau00e7u00e3o
+        exportReportBtn.disabled = false;
+        
+        addLogEntry(`Todos os testes concluu00eddos: ${results.passed} passaram, ${results.failed} falharam de um total de ${results.total}`, 
+          results.failed > 0 ? 'warning' : 'success');
+      } catch (error) {
+        console.error('Erro ao executar testes:', error);
+        statusMessage.textContent = `Erro: ${error.message}`;
+        progressBarFill.style.width = '100%';
+        progressBarFill.style.backgroundColor = 'var(--error-color)';
+      } finally {
+        runAllTestsBtn.disabled = false;
+        runAllTestsBtn.textContent = 'Executar Todos os Testes';
+      }
+    });
+
+    // Exportar relatu00f3rio
+    exportReportBtn.addEventListener('click', () => {
+      try {
+        const reportHTML = document.documentElement.outerHTML;
+        const blob = new Blob([reportHTML], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `n8n-browser-agents-test-report-${new Date().toISOString().slice(0, 10)}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        addLogEntry('Relatu00f3rio exportado com sucesso', 'success');
+      } catch (error) {
+        console.error('Erro ao exportar relatu00f3rio:', error);
+        addLogEntry(`Erro ao exportar relatu00f3rio: ${error.message}`, 'error');
+      }
+    });
+
+    // Animau00e7u00e3o de progresso
+    function startProgressAnimation() {
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 0.5;
+        if (progress >= 90) {
+          clearInterval(interval);
+          return;
+        }
+        progressBarFill.style.width = `${progress}%`;
+      }, 100);
+    }
+
+    // Atualizar UI com resultados
+    function updateReportUI(results) {
+      // Exibir container de relatu00f3rio
+      reportContainer.style.display = 'block';
+      
+      // Atualizar sumu00e1rio
+      totalTestsEl.textContent = results.total;
+      passedTestsEl.textContent = results.passed;
+      failedTestsEl.textContent = results.failed;
+      
+      // Calcular percentuais
+      const passPercentage = results.total > 0 ? Math.round(results.passed / results.total * 100) : 0;
+      const failPercentage = results.total > 0 ? Math.round(results.failed / results.total * 100) : 0;
+      
+      passPercentageEl.textContent = `${passPercentage}%`;
+      failPercentageEl.textContent = `${failPercentage}%`;
+      
+      // Renderizar categorias
+      results.categories.forEach(category => {
+        const categoryEl = document.createElement('div');
+        categoryEl.className = 'category';
+        
+        const passRate = category.total > 0 ? Math.round(category.passed / category.total * 100) : 0;
+        
+        // Header da categoria
+        const categoryHeader = document.createElement('div');
+        categoryHeader.className = 'category-header';
+        categoryHeader.innerHTML = `
+          <div class="category-name">
+            <span>${category.name}</span>
+          </div>
+          <div class="category-stats">
+            <div class="stat stat-passed">
+              <span>${category.passed} passados</span>
+            </div>
+            <div class="stat stat-failed">
+              <span>${category.failed} falhos</span>
+            </div>
+            <div class="stat">
+              <span>${passRate}% de sucesso</span>
+            </div>
+          </div>
+        `;
+        
+        // Detalhes da categoria (testes)
+        const categoryDetails = document.createElement('div');
+        categoryDetails.className = 'category-details';
+        
+        // Adicionar testes
+        if (category.details && category.details.length > 0) {
+          category.details.forEach(test => {
+            const testItem = document.createElement('div');
+            testItem.className = `test-item ${test.success ? 'test-success' : 'test-error'}`;
+            
+            testItem.innerHTML = `
+              <div>
+                <div class="test-name">${test.name}</div>
+                ${test.message ? `<div class="test-message">${test.message}</div>` : ''}
+              </div>
+              <div>
+                ${test.success ? 'u2705' : 'u274C'}
+              </div>
+            `;
+            
+            categoryDetails.appendChild(testItem);
+          });
+        } else {
+          categoryDetails.innerHTML = '<p>Nenhum detalhe disponu00edvel para esta categoria.</p>';
+        }
+        
+        // Adicionar evento para expandir/colapsar
+        categoryHeader.addEventListener('click', () => {
+          categoryDetails.classList.toggle('expanded');
+        });
+        
+        categoryEl.appendChild(categoryHeader);
+        categoryEl.appendChild(categoryDetails);
+        categoryResultsEl.appendChild(categoryEl);
+      });
+    }
+
+    // Adicionar mensagem inicial
+    addLogEntry('Pu00e1gina de testes carregada. Pronto para executar testes.', 'info');
+  </script>
+</body>
+</html>

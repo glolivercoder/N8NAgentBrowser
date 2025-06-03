@@ -34,6 +34,22 @@
           <p>Crie e otimize workflows N8N com a ajuda de IA</p>
         </div>
 
+        <!-- Interface do Assistente Principal -->
+        <div id="n8n-agent-container">
+          <div id="agent-response-container" class="response-area">
+            <!-- As respostas do agente aparecerão aqui -->
+            <p class="empty-state">Faça uma pergunta para começar...</p>
+          </div>
+          <div id="agent-loading-indicator" style="display: none;">
+            <p>Processando...</p> <!-- Ou um spinner/animação -->
+          </div>
+          <div class="input-area">
+            <textarea id="agent-question-input" placeholder="Pergunte algo ao assistente N8N..." rows="3"></textarea>
+            <button id="agent-submit-button" class="primary-btn">Enviar</button>
+          </div>
+        </div>
+        <!-- Fim da Interface do Assistente Principal -->
+
         <div class="quick-actions">
           <button id="btn-new-workflow" class="action-btn">
             <span class="icon">➕</span>
@@ -55,6 +71,10 @@
             <p class="empty-state">Nenhum workflow recente</p>
           </div>
         </div>
+        
+        <!-- Container para mensagens de erro/sucesso na aba Home/Assistant -->
+        <div id="assistant-error-container" class="message-container error-message" style="display:none;"></div>
+        <div id="assistant-success-container" class="message-container success-message" style="display:none;"></div>
       </div>
 
       <!-- Tab: Create -->
@@ -177,6 +197,8 @@
       <!-- Tab: Docker -->
       <div id="docker" class="tab-pane">
         <h2>Gerenciamento de Container Docker</h2>
+        <div class="message-container error-message" id="docker-error-message" style="display:none;"></div>
+        <div class="message-container success-message" id="docker-success-message" style="display:none;"></div>
         
         <div class="docker-status-panel">
           <div class="status-header">
@@ -316,6 +338,19 @@
           </div>
         </div>
         
+        <div class="integration-tests">
+          <h3>Testes de Integração</h3>
+          <p>Execute testes para verificar a integração entre a UI e o background script</p>
+          <div class="test-actions">
+            <button type="button" id="test-integration-button" class="secondary-btn">Testar Integração</button>
+            <button type="button" id="test-docker-integration-button" class="secondary-btn">Testar Docker</button>
+            <button type="button" id="test-openrouter-integration-button" class="secondary-btn">Testar OpenRouter</button>
+          </div>
+          <div id="test-results" class="test-results-container">
+            <p class="empty-state">Execute os testes para ver os resultados</p>
+          </div>
+        </div>
+        
         <div class="about">
           <h3>Sobre</h3>
           <p>N8N Workflow Assistant v1.0.0</p>
@@ -327,5 +362,6 @@
   </div>
 
   <script src="popup.js" type="module"></script>
+  <script src="n8n-agent-ui.js" type="module"></script>
 </body>
 </html>

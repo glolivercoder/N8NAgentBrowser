@@ -154,12 +154,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const analysis = await openRouterAPI.analyzeWorkflow(message.workflow);
         sendResponse({ success: true, analysis });
       } 
-      else if (message.action === 'suggestImprovements') {
+      else if (message.action === 'suggestWorkflowImprovements') {
         const suggestions = await openRouterAPI.suggestImprovements(
           message.workflow, 
-          message.context
+          message.analysis || {}
         );
         sendResponse({ success: true, suggestions });
+      }
+      else if (message.action === 'exportWorkflow') {
+        try {
+          const data = await openRouterAPI.exportWorkflow(message.workflow, message.format || 'json');
+          sendResponse({ success: true, data });
+        } catch (error) {
+          console.error('Erro ao exportar workflow:', error);
+          sendResponse({ success: false, error: error.message });
+        }
+      }
+      else if (message.action === 'checkOpenRouterConfig') {
+        const apiKey = await storageManager.getSetting('openRouterApiKey');
+        const configured = !!apiKey && apiKey.trim() !== '';
+        sendResponse({ success: true, configured });
       }
       else if (message.action === 'getAppState') {
         // Atualizar o estado com as configurações mais recentes antes de enviar
@@ -297,16 +311,16 @@ async function handleN8NAgentMessages(message, sendResponse) {
 
 // Listener para cliques no menu de contexto
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === 'generate-workflow') {
+  if (info.menuItemId === 'generate-workflow' && tab && typeof tab.id === 'number' && tab.id >= 0) {
     chrome.tabs.sendMessage(tab.id, { action: 'openGenerateWorkflowModal' });
   } 
-  else if (info.menuItemId === 'analyze-workflow') {
+  else if (info.menuItemId === 'analyze-workflow' && tab && typeof tab.id === 'number' && tab.id >= 0) {
     chrome.tabs.sendMessage(tab.id, { action: 'openAnalyzeWorkflowModal' });
   } 
-  else if (info.menuItemId === 'suggest-improvements') {
+  else if (info.menuItemId === 'suggest-improvements' && tab && typeof tab.id === 'number' && tab.id >= 0) {
     chrome.tabs.sendMessage(tab.id, { action: 'openSuggestImprovementsModal' });
   }
-  else if (info.menuItemId === 'troubleshoot-workflow') {
+  else if (info.menuItemId === 'troubleshoot-workflow' && tab && typeof tab.id === 'number' && tab.id >= 0) {
     chrome.tabs.sendMessage(tab.id, { action: 'openTroubleshootModal' });
   }
   else if (info.menuItemId === 'n8n-agent') {

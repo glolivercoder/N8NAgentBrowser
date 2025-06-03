@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N8N Workflow Assistant</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <img src="../assets/icons/icon48.png" alt="N8N Workflow Assistant">
+        <h1>N8N Workflow Assistant</h1>
+      </div>
+      <div class="status">
+        <span id="connection-status" class="status-indicator"></span>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="home">Início</button>
+      <button class="tab-btn" data-tab="create">Criar</button>
+      <button class="tab-btn" data-tab="analyze">Analisar</button>
+      <button class="tab-btn" data-tab="docker">Docker</button>
+      <button class="tab-btn" data-tab="settings">Configurações</button>
+    </div>
+
+    <div class="tab-content">
+      <!-- Tab: Home -->
+      <div id="home" class="tab-pane active">
+        <div class="welcome">
+          <h2>Bem-vindo ao N8N Workflow Assistant</h2>
+          <p>Crie e otimize workflows N8N com a ajuda de IA</p>
+        </div>
+
+        <div class="quick-actions">
+          <button id="btn-new-workflow" class="action-btn">
+            <span class="icon">➕</span>
+            <span>Novo Workflow</span>
+          </button>
+          <button id="btn-analyze-workflow" class="action-btn">
+            <span class="icon">🔍</span>
+            <span>Analisar Workflow</span>
+          </button>
+          <button id="btn-improve-workflow" class="action-btn">
+            <span class="icon">⚡</span>
+            <span>Otimizar Workflow</span>
+          </button>
+        </div>
+
+        <div class="recent-workflows">
+          <h3>Workflows Recentes</h3>
+          <div id="recent-workflows-list" class="list">
+            <p class="empty-state">Nenhum workflow recente</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Create -->
+      <div id="create" class="tab-pane">
+        <h2>Criar Novo Workflow</h2>
+        
+        <form id="create-workflow-form">
+          <div class="form-group">
+            <label for="workflow-name">Nome do Workflow:</label>
+            <input type="text" id="workflow-name" placeholder="Meu Novo Workflow">
+          </div>
+          
+          <div class="form-group">
+            <label for="workflow-description">Descrição (o que o workflow deve fazer):</label>
+            <textarea id="workflow-description" rows="5" placeholder="Descreva em detalhes o que você deseja que o workflow faça..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Tipo de Trigger:</label>
+            <div class="radio-group">
+              <label>
+                <input type="radio" name="trigger-type" value="webhook" checked>
+                Webhook
+              </label>
+              <label>
+                <input type="radio" name="trigger-type" value="schedule">
+                Agendamento
+              </label>
+              <label>
+                <input type="radio" name="trigger-type" value="manual">
+                Manual
+              </label>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Opções Avançadas:</label>
+            <div class="checkbox-group">
+              <label>
+                <input type="checkbox" id="include-error-handling">
+                Incluir tratamento de erros
+              </label>
+              <label>
+                <input type="checkbox" id="include-logging">
+                Incluir logging
+              </label>
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="primary-btn">Gerar Workflow</button>
+          </div>
+        </form>
+        
+        <div id="generation-result" class="result-container hidden">
+          <div class="result-header">
+            <h3>Workflow Gerado</h3>
+            <button id="copy-workflow" class="icon-btn">📋</button>
+          </div>
+          <pre id="workflow-json"></pre>
+          <div class="result-actions">
+            <button id="download-workflow" class="secondary-btn">Baixar JSON</button>
+            <button id="import-to-n8n" class="primary-btn">Importar para N8N</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Analyze -->
+      <div id="analyze" class="tab-pane">
+        <h2>Analisar Workflow</h2>
+        
+        <div class="form-group">
+          <label for="workflow-source">Selecione a fonte do workflow:</label>
+          <div class="radio-group">
+            <label>
+              <input type="radio" name="workflow-source" value="current" checked>
+              Workflow atual no N8N
+            </label>
+            <label>
+              <input type="radio" name="workflow-source" value="upload">
+              Fazer upload de JSON
+            </label>
+            <label>
+              <input type="radio" name="workflow-source" value="paste">
+              Colar JSON
+            </label>
+          </div>
+        </div>
+        
+        <div id="workflow-upload" class="form-group hidden">
+          <label for="workflow-file">Selecione o arquivo JSON:</label>
+          <input type="file" id="workflow-file" accept=".json">
+        </div>
+        
+        <div id="workflow-paste" class="form-group hidden">
+          <label for="workflow-json-input">Cole o JSON do workflow:</label>
+          <textarea id="workflow-json-input" rows="5" placeholder="Cole o JSON do workflow aqui..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="analysis-type">Tipo de análise:</label>
+          <select id="analysis-type">
+            <option value="complete">Análise completa</option>
+            <option value="performance">Performance</option>
+            <option value="security">Segurança</option>
+            <option value="best-practices">Melhores práticas</option>
+          </select>
+        </div>
+        
+        <div class="form-actions">
+          <button id="analyze-btn" class="primary-btn">Analisar Workflow</button>
+        </div>
+        
+        <div id="analysis-result" class="result-container hidden">
+          <h3>Resultado da Análise</h3>
+          <div id="analysis-content"></div>
+        </div>
+      </div>
+
+      <!-- Tab: Docker -->
+      <div id="docker" class="tab-pane">
+        <h2>Gerenciamento de Container Docker</h2>
+        
+        <div class="docker-status-panel">
+          <div class="status-header">
+            <h3>Status do Container</h3>
+            <span id="docker-status-indicator" class="status-badge">Verificando...</span>
+          </div>
+          
+          <div class="docker-controls">
+            <button id="start-container" class="action-btn">
+              <span class="icon">▶️</span>
+              <span>Iniciar</span>
+            </button>
+            <button id="stop-container" class="action-btn">
+              <span class="icon">⏹️</span>
+              <span>Parar</span>
+            </button>
+            <button id="restart-container" class="action-btn">
+              <span class="icon">🔄</span>
+              <span>Reiniciar</span>
+            </button>
+            <button id="refresh-status" class="action-btn">
+              <span class="icon">🔍</span>
+              <span>Atualizar Status</span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="docker-config-panel">
+          <h3>Configuração do Container</h3>
+          
+          <form id="docker-config-form">
+            <div class="form-group">
+              <label for="docker-port">Porta:</label>
+              <input type="number" id="docker-port" value="5678" min="1024" max="65535">
+            </div>
+            
+            <div class="form-group">
+              <label for="docker-data-path">Caminho dos Dados:</label>
+              <input type="text" id="docker-data-path" value="./n8n-data" placeholder="Caminho para armazenar dados do N8N">
+            </div>
+            
+            <div class="form-actions">
+              <button type="submit" class="primary-btn">Gerar Docker Compose</button>
+            </div>
+          </form>
+          
+          <div id="docker-compose-result" class="result-container hidden">
+            <div class="result-header">
+              <h3>Docker Compose</h3>
+              <div class="result-actions">
+                <button id="copy-docker-compose" class="icon-btn">📋</button>
+                <button id="save-docker-compose" class="secondary-btn">Salvar Arquivo</button>
+              </div>
+            </div>
+            <pre id="docker-compose-content"></pre>
+          </div>
+        </div>
+        
+        <div class="docker-logs-panel">
+          <div class="logs-header">
+            <h3>Logs do Container</h3>
+            <div class="logs-actions">
+              <button id="refresh-logs" class="secondary-btn">Atualizar Logs</button>
+              <button id="toggle-auto-refresh" class="secondary-btn">Auto-Refresh: Desligado</button>
+              <select id="log-lines-count">
+                <option value="50">50 linhas</option>
+                <option value="100" selected>100 linhas</option>
+                <option value="200">200 linhas</option>
+                <option value="500">500 linhas</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="logs-container">
+            <pre id="docker-logs">Logs não disponíveis. Inicie o container para visualizar logs.</pre>
+          </div>
+        </div>
+        
+        <div id="docker-error-container" class="error-message hidden"></div>
+        <div id="docker-success-container" class="success-message hidden"></div>
+      </div>
+
+      <!-- Tab: Settings -->
+      <div id="settings" class="tab-pane">
+        <h2>Configurações</h2>
+        
+        <form id="settings-form">
+          <div class="form-group">
+            <label for="openrouter-api-key">OpenRouter API Key:</label>
+            <div class="api-key-input">
+              <input type="password" id="openrouter-api-key" placeholder="Insira sua API key da OpenRouter">
+              <button type="button" id="toggle-api-key" class="icon-btn">👁️</button>
+            </div>
+            <small>Obtenha sua API key em <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a></small>
+          </div>
+          
+          <div class="form-group">
+            <label for="default-model">Modelo padrão:</label>
+            <select id="default-model">
+              <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (Gratuito)</option>
+              <option value="anthropic/claude-3-opus:beta">Claude 3 Opus</option>
+              <option value="anthropic/claude-3-sonnet:beta">Claude 3 Sonnet</option>
+              <option value="gpt-4o">GPT-4o</option>
+              <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="theme">Tema:</label>
+            <select id="theme">
+              <option value="light">Claro</option>
+              <option value="dark">Escuro</option>
+              <option value="system">Sistema</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>N8N Instances:</label>
+            <div id="n8n-instances">
+              <div class="instance-item">
+                <input type="text" placeholder="URL da instância N8N (ex: http://localhost:5678)" class="instance-url">
+                <button type="button" class="remove-instance icon-btn">❌</button>
+              </div>
+            </div>
+            <button type="button" id="add-instance" class="secondary-btn">Adicionar Instância</button>
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="primary-btn">Salvar Configurações</button>
+          </div>
+        </form>
+        
+        <div class="api-usage">
+          <h3>Uso da API</h3>
+          <div id="api-usage-stats">
+            <p class="empty-state">Configure sua API key para ver estatísticas de uso</p>
+          </div>
+        </div>
+        
+        <div class="integration-tests">
+          <h3>Testes de Integração</h3>
+          <p>Execute testes para verificar a integração entre a UI e o background script</p>
+          <div class="test-actions">
+            <button type="button" id="test-integration-button" class="secondary-btn">Testar Integração</button>
+            <button type="button" id="test-docker-integration-button" class="secondary-btn">Testar Docker</button>
+            <button type="button" id="test-openrouter-integration-button" class="secondary-btn">Testar OpenRouter</button>
+          </div>
+          <div id="test-results" class="test-results-container">
+            <p class="empty-state">Execute os testes para ver os resultados</p>
+          </div>
+        </div>
+        
+        <div class="about">
+          <h3>Sobre</h3>
+          <p>N8N Workflow Assistant v1.0.0</p>
+          <p>Desenvolvido para a comunidade N8N</p>
+          <p><a href="https://github.com/seu-usuario/n8n-workflow-assistant" target="_blank">GitHub</a> | <a href="https://github.com/seu-usuario/n8n-workflow-assistant/issues" target="_blank">Reportar Bug</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+  <script src="n8n-agent-ui.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{
+  "name": "n8n-browser-agents",
+  "version": "1.0.0",
+  "description": "Assistente inteligente para criação e otimização de workflows no N8N usando modelos de linguagem",
+  "main": "background/background.js",
+  "scripts": {
+    "test": "echo \"Abra tests/run-tests.html no navegador para executar os testes\" && exit 0",
+    "build": "node build.js",
+    "lint": "eslint .",
+    "dev": "web-ext run --source-dir=."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/seu-usuario/n8n-browser-agents.git"
+  },
+  "keywords": [
+    "n8n",
+    "workflow",
+    "automation",
+    "chrome-extension",
+    "openrouter",
+    "docker"
+  ],
+  "author": "Seu Nome",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/seu-usuario/n8n-browser-agents/issues"
+  },
+  "homepage": "https://github.com/seu-usuario/n8n-browser-agents#readme",
+  "devDependencies": {
+    "archiver": "^5.3.1",
+    "eslint": "^8.40.0",
+    "web-ext": "^8.7.1"
+  }
+}
