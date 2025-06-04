@@ -3,7 +3,7 @@
  */
 
 // Importar a classe OpenRouterAPI
-import { OpenRouterAPI } from '../lib/openrouter-api.js';
+import { OpenRouterService, getOpenRouterService } from '../lib/openrouter-api.js';
 
 // Estado da aplicação
 let state = {

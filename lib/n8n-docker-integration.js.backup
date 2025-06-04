@@ -186,95 +186,6 @@ services:
   }
 
   /**
-   * Start N8N container
-   * @param {number} port - Port to run N8N on
-   * @returns {Promise<Object>} - Result of start operation
-   */
-  async startContainer(port = 5678) {
-    try {
-      const dockerCompose = this.generateDockerComposeFile({ port });
-      // Simular início do container
-      return { 
-        success: true, 
-        message: 'Container iniciado com sucesso',
-        url: `http://localhost:${port}`,
-        containerName: this.containerName
-      };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
-
-  /**
-   * Stop N8N container
-   * @returns {Promise<Object>} - Result of stop operation
-   */
-  async stopContainer() {
-    try {
-      // Simular parada do container
-      return { 
-        success: true, 
-        message: 'Container parado com sucesso',
-        containerName: this.containerName
-      };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
-
-  /**
-   * Restart N8N container
-   * @returns {Promise<Object>} - Result of restart operation
-   */
-  async restartContainer() {
-    try {
-      // Simular reinício do container
-      return { 
-        success: true, 
-        message: 'Container reiniciado com sucesso',
-        containerName: this.containerName
-      };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
-
-  /**
-   * Get logs with simplified interface for background script
-   * @param {Object} options - Options for log retrieval
-   * @returns {Promise<string>} - Container logs
-   */
-  async getLogs(options = {}) {
-    try {
-      const logs = await this.getContainerLogs(options);
-      return logs;
-    } catch (error) {
-      return `Erro ao obter logs: ${error.message}`;
-    }
-  }
-
-  /**
-   * Save Docker Compose file
-   * @param {string} content - Docker Compose content
-   * @param {string} path - Path to save the file
-   * @returns {Promise<Object>} - Result of save operation
-   */
-  async saveDockerComposeFile(content, path = './docker-compose.yml') {
-    try {
-      // Em uma extensão real, isso seria feito via native messaging
-      // Por enquanto, simular o salvamento
-      return { 
-        success: true, 
-        message: `Docker Compose salvo em ${path}`,
-        path,
-        content
-      };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
-
-  /**
    * Start monitoring container status
    * @param {number} interval - Monitoring interval in milliseconds (default: 5000)
    * @returns {void}
@@ -385,19 +296,222 @@ services:
     };
     
     // Initial log fetch
-    fetchLogs();
+}
+
+/**
+ * Stop monitoring container status
+ * @returns {void}
+ */
+stopMonitoring() {
+  if (this.monitoringInterval) {
+    clearInterval(this.monitoringInterval);
+    this.monitoringInterval = null;
+  }
+}
+
+/**
+ * Add a listener for container logs
+ * @param {Function} listener - Callback function that receives log data
+ * @returns {Function} - Function to remove the listener
+ */
+addLogListener(listener) {
+  if (typeof listener === 'function') {
+    this.logListeners.push(listener);
     
-    // Set up interval for continuous log fetching
-    logInterval = setInterval(fetchLogs, interval);
-    
-    // Return control object
-    return {
-      stop: () => {
-        if (logInterval) {
-          clearInterval(logInterval);
-          logInterval = null;
-        }
-      }
+    // Return function to remove this listener
+    return () => {
+      this.logListeners = this.logListeners.filter(l => l !== listener);
     };
   }
+}
+
+/**
+ * Add a listener for container status changes
+ * @param {Function} listener - Callback function that receives status data
+ * @returns {Function} - Function to remove the listener
+ */
+addStatusListener(listener) {
+  if (typeof listener === 'function') {
+    this.statusListeners.push(listener);
+    
+    // Return function to remove this listener
+    return () => {
+      this.statusListeners = this.statusListeners.filter(l => l !== listener);
+    };
+  }
+}
+
+/**
+ * Notify all status listeners of a status change
+ * @param {Object} status - Container status data
+ * @private
+ */
+notifyStatusListeners(status) {
+  if (this.statusListeners.length > 0) {
+    this.statusListeners.forEach(listener => listener(status));
+  }
+}
+
+/**
+ * Stream container logs in real-time
+ * @param {Function} callback - Callback function that receives each log line
+ * @param {number} interval - Polling interval in milliseconds (default: 2000)
+ * @returns {Object} - Control object with stop method
+ */
+streamLogs(callback, interval = 2000) {
+  if (typeof callback !== 'function') {
+    throw new Error('Callback must be a function');
+  }
+  
+  let lastLogTimestamp = new Date().getTime();
+  let logInterval;
+  
+  // Function to fetch and process new logs
+  const fetchLogs = async () => {
+    try {
+      const logs = await this.getContainerLogs();
+      // In a real implementation, we would filter logs by timestamp
+      // and only send new logs to the callback
+      callback(logs);
+      lastLogTimestamp = new Date().getTime();
+    } catch (error) {
+      console.error('Error streaming logs:', error);
+    }
+  };
+  
+  // Initial log fetch
+  fetchLogs();
+  
+  // Set up interval for continuous log fetching
+  logInterval = setInterval(fetchLogs, interval);
+  
+  // Return control object
+  return {
+    stop: () => {
+      if (logInterval) {
+        clearInterval(logInterval);
+        logInterval = null;
+      }
+    }
+  };
+}
+
+/**
+ * Start the N8N Docker container
+ * @param {number} port - Port to use for N8N (optional)
+ * @returns {Promise<Object>} - Result of the operation
+ */
+async startContainer(port) {
+  try {
+    // In a real implementation, this would execute a Docker command via native messaging
+    // For now, we'll simulate a successful container start
+    console.log(`Starting N8N container on port ${port || this.defaultPort}...`);
+    
+    // If port is provided and different from default, update the default
+    if (port && port !== this.defaultPort) {
+      this.defaultPort = port;
+    }
+    
+    // Simulate a delay for container startup
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Return success result
+    return {
+      success: true,
+      message: `N8N container started on port ${this.defaultPort}`,
+      url: `${this.defaultProtocol}://${this.defaultHost}:${this.defaultPort}`
+    };
+  } catch (error) {
+    console.error('Error starting N8N container:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to start N8N container'
+    };
+  }
+}
+
+/**
+ * Stop the N8N Docker container
+ * @returns {Promise<Object>} - Result of the operation
+ */
+async stopContainer() {
+  try {
+    // In a real implementation, this would execute a Docker command via native messaging
+    // For now, we'll simulate a successful container stop
+    console.log('Stopping N8N container...');
+    
+    // Simulate a delay for container stop
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Return success result
+    return {
+      success: true,
+      message: 'N8N container stopped successfully'
+    };
+  } catch (error) {
+    console.error('Error stopping N8N container:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to stop N8N container'
+    };
+  }
+}
+
+/**
+ * Restart the N8N Docker container
+ * @returns {Promise<Object>} - Result of the operation
+ */
+async restartContainer() {
+  try {
+    // In a real implementation, this would execute a Docker command via native messaging
+    // For now, we'll simulate a successful container restart
+    console.log('Restarting N8N container...');
+    
+    // Simulate a delay for container restart
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Return success result
+    return {
+      success: true,
+      message: 'N8N container restarted successfully',
+      url: `${this.defaultProtocol}://${this.defaultHost}:${this.defaultPort}`
+    };
+  } catch (error) {
+    console.error('Error restarting N8N container:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to restart N8N container'
+    };
+  }
+}
+
+/**
+ * Save Docker Compose file to a specified path
+ * @param {string} content - Content of the Docker Compose file
+ * @param {string} path - Path to save the Docker Compose file to
+ * @returns {Promise<Object>} - Result of the operation
+ */
+async saveDockerComposeFile(content, path) {
+  try {
+    // In a real implementation, this would save to the filesystem
+    // via native messaging or another mechanism
+    // For now, we'll simulate a successful save
+    
+    console.log(`Saving Docker Compose file to ${path}...`);
+    console.log('Content:', content.substring(0, 100) + '...');
+    
+    // Return success result
+    return {
+      success: true,
+      message: `Docker Compose file saved to ${path}`,
+      path: path
+    };
+  } catch (error) {
+    console.error('Error saving Docker Compose file:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to save Docker Compose file'
+    };
+  }
+}
 }

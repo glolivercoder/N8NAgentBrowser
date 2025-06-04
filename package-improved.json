@@ -1,0 +1,150 @@
+{
+  "name": "n8n-browser-agents",
+  "version": "1.0.1",
+  "description": "Assistente inteligente para criação e otimização de workflows no N8N usando modelos de linguagem",
+  "main": "background/background.js",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run-node-tests.js",
+    "test:browser": "echo \"Abra tests/run-tests.html no navegador para executar os testes\" && exit 0",
+    "build": "node build.js",
+    "build:zip": "node scripts/build-extension.js",
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix",
+    "dev": "web-ext run --source-dir=. --browser-console",
+    "dev:firefox": "web-ext run --source-dir=. --target=firefox-desktop",
+    "validate": "web-ext lint --source-dir=.",
+    "clean": "node scripts/clean.js",
+    "setup": "npm install && npm run validate",
+    "fix-tests": "node scripts/fix-tests.js",
+    "docker:build": "docker build -t n8n-browser-agents .",
+    "docker:run": "docker run -p 5678:5678 n8n-browser-agents"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/seu-usuario/n8n-browser-agents.git"
+  },
+  "keywords": [
+    "n8n",
+    "workflow",
+    "automation",
+    "chrome-extension",
+    "firefox-addon",
+    "openrouter",
+    "docker",
+    "ai",
+    "llm",
+    "browser-extension"
+  ],
+  "author": "N8N Browser Agents Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/seu-usuario/n8n-browser-agents/issues"
+  },
+  "homepage": "https://github.com/seu-usuario/n8n-browser-agents#readme",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "archiver": "^5.3.1",
+    "eslint": "^8.40.0",
+    "web-ext": "^8.7.1",
+    "jest": "^29.0.0",
+    "puppeteer": "^21.0.0",
+    "fs-extra": "^11.1.0",
+    "chalk": "^5.2.0",
+    "ora": "^6.3.0",
+    "inquirer": "^9.2.0",
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.0.0",
+    "concurrently": "^8.2.0"
+  },
+  "dependencies": {
+    "yaml": "^2.3.0",
+    "semver": "^7.5.0",
+    "uuid": "^9.0.0",
+    "lodash": "^4.17.21",
+    "axios": "^1.4.0",
+    "joi": "^17.9.0"
+  },
+  "optionalDependencies": {
+    "dockerode": "^4.0.0",
+    "node-fetch": "^3.3.0"
+  },
+  "peerDependencies": {
+    "docker": ">=20.0.0"
+  },
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Firefox versions",
+    "last 2 Edge versions"
+  ],
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "es2022": true,
+      "webextensions": true,
+      "node": true
+    },
+    "extends": [
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "ecmaVersion": 2022,
+      "sourceType": "module"
+    },
+    "globals": {
+      "chrome": "readonly",
+      "browser": "readonly"
+    },
+    "rules": {
+      "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+      "no-console": "off",
+      "prefer-const": "error",
+      "no-var": "error"
+    }
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
+    "testMatch": [
+      "**/tests/**/*.test.js",
+      "**/tests/**/*.spec.js"
+    ],
+    "collectCoverageFrom": [
+      "lib/**/*.js",
+      "background/**/*.js",
+      "popup/**/*.js",
+      "content/**/*.js",
+      "!**/node_modules/**",
+      "!**/tests/**"
+    ]
+  },
+  "webExt": {
+    "sourceDir": ".",
+    "artifactsDir": "dist",
+    "ignoreFiles": [
+      "node_modules",
+      "tests",
+      "scripts",
+      "*.md",
+      "package*.json",
+      ".git*",
+      ".eslint*",
+      "*.log"
+    ]
+  },
+  "config": {
+    "extension": {
+      "name": "N8N Workflow Assistant",
+      "version": "1.0.1",
+      "minChromeVersion": "88",
+      "minFirefoxVersion": "78"
+    },
+    "build": {
+      "outputDir": "dist",
+      "zipName": "n8n-browser-agents-v{version}.zip"
+    }
+  }
+}

@@ -3,14 +3,14 @@
  * Gerencia a comunicação com APIs e o estado global da extensão
  */
 
-import { OpenRouterService, getOpenRouterService } from '../lib/openrouter-api.js';
+import { OpenRouterAPI } from '../lib/openrouter-api.js';
 import { N8NAgentIntegration } from '../lib/n8n-agent-integration.js';
 import { N8NDockerIntegration } from '../lib/n8n-docker-integration.js';
 import { MCPIntegration } from '../lib/mcp-integration.js';
 import { storageManager } from '../lib/storage-manager.js';
 
 // Inicializar APIs e integrações
-const openRouterAPI = getOpenRouterService();
+const openRouterAPI = new OpenRouterAPI();
 const n8nAgentIntegration = new N8NAgentIntegration();
 const dockerIntegration = new N8NDockerIntegration();
 const mcpIntegration = new MCPIntegration();

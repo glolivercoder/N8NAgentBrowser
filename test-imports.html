@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Imports OpenRouter</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .log {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Imports OpenRouter</h1>
+        
+        <button class="button" onclick="testImports()">Testar Imports</button>
+        <button class="button" onclick="testApiKey()">Testar API Key</button>
+        <button class="button" onclick="testConnection()">Testar Conexão</button>
+        
+        <div id="status"></div>
+        <div id="log" class="log" style="display: none;"></div>
+    </div>
+
+    <script type="module">
+        const API_KEY = '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';
+        
+        function showStatus(message, type = 'success') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function addLog(message) {
+            const logDiv = document.getElementById('log');
+            logDiv.style.display = 'block';
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<span style="color: #4fd1c7;">[${timestamp}]</span> ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        window.testImports = async function() {
+            try {
+                addLog('=== Testando Imports ===');
+                
+                // Testar import do OpenRouter Service
+                const { OpenRouterService, getOpenRouterService, OpenRouterAPI } = await import('./lib/openrouter-api.js');
+                addLog('✓ Import OpenRouterService: OK');
+                addLog('✓ Import getOpenRouterService: OK');
+                addLog('✓ Import OpenRouterAPI (compatibilidade): OK');
+                
+                // Testar criação de instância
+                const service = getOpenRouterService();
+                addLog('✓ Criação de instância: OK');
+                addLog(`Tipo da instância: ${service.constructor.name}`);
+                
+                // Testar métodos básicos
+                addLog(`isConfigured(): ${service.isConfigured()}`);
+                
+                showStatus('✅ Todos os imports funcionando corretamente!', 'success');
+                
+            } catch (error) {
+                addLog(`❌ Erro no import: ${error.message}`);
+                showStatus(`❌ Erro nos imports: ${error.message}`, 'error');
+            }
+        };
+        
+        window.testApiKey = async function() {
+            try {
+                addLog('=== Testando API Key ===');
+                
+                if (typeof chrome === 'undefined' || !chrome.storage) {
+                    throw new Error('Chrome storage não disponível');
+                }
+                
+                // Configurar API key
+                const data = await chrome.storage.local.get('settings');
+                const settings = data.settings || {};
+                settings.openrouterApiKey = API_KEY;
+                await chrome.storage.local.set({ settings });
+                
+                addLog('✓ API Key salva no storage');
+                
+                // Testar carregamento
+                const { getOpenRouterService } = await import('./lib/openrouter-api.js');
+                const service = getOpenRouterService();
+                await service.loadApiKey();
+                
+                addLog(`✓ API Key carregada: ${service.isConfigured()}`);
+                
+                if (service.isConfigured()) {
+                    showStatus('✅ API Key configurada e carregada com sucesso!', 'success');
+                } else {
+                    showStatus('⚠️ API Key não foi carregada corretamente', 'error');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro na API Key: ${error.message}`);
+                showStatus(`❌ Erro na API Key: ${error.message}`, 'error');
+            }
+        };
+        
+        window.testConnection = async function() {
+            try {
+                addLog('=== Testando Conexão ===');
+                
+                const { getOpenRouterService } = await import('./lib/openrouter-api.js');
+                const service = getOpenRouterService();
+                
+                // Garantir que a API key está configurada
+                if (!service.isConfigured()) {
+                    await service.saveApiKey(API_KEY);
+                    addLog('✓ API Key configurada');
+                }
+                
+                // Testar conexão
+                const result = await service.testConnection();
+                
+                if (result.success) {
+                    addLog(`✅ Conexão bem-sucedida: ${result.message}`);
+                    showStatus(`✅ ${result.message}`, 'success');
+                } else {
+                    addLog(`❌ Falha na conexão: ${result.error}`);
+                    showStatus(`❌ Falha na conexão: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro na conexão: ${error.message}`);
+                showStatus(`❌ Erro na conexão: ${error.message}`, 'error');
+            }
+        };
+        
+        // Inicializar
+        addLog('Sistema de teste inicializado');
+        showStatus('Pronto para testar os imports do OpenRouter', 'success');
+    </script>
+</body>
+</html>

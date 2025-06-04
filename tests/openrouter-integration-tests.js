@@ -1,6 +1,6 @@
 // openrouter-integration-tests.js - Testes de integração específicos para OpenRouter
 import { N8NIntegrationTests } from './integration-tests.js';
-import { OpenRouterAPI } from '../lib/openrouter-api.js';
+import { OpenRouterService, getOpenRouterService } from '../lib/openrouter-api.js';
 
 /**
  * Classe de testes de integração específicos para OpenRouter
@@ -9,7 +9,7 @@ import { OpenRouterAPI } from '../lib/openrouter-api.js';
 class OpenRouterIntegrationTests extends N8NIntegrationTests {
   constructor() {
     super();
-    this.openRouterApi = new OpenRouterAPI();
+    this.openRouterApi = getOpenRouterService();
   }
 
   /**
@@ -60,17 +60,17 @@ class OpenRouterIntegrationTests extends N8NIntegrationTests {
       console.log('Testando configuração da API key...');
       
       // Verificar se a API key está configurada
-      const isConfigured = await this.sendTestRequest('checkOpenRouterConfig');
+      const isConfigured = await this.sendTestRequest('getSettings');
       
       this.recordTestResult(
         'Verificar Configuração da API Key', 
-        !!isConfigured.configured, 
-        isConfigured.configured ? 'API key está configurada' : 'API key não está configurada',
-        isConfigured.configured ? null : new Error('API key não configurada')
+        !!isConfigured && isConfigured.openrouterApiKey, 
+        isConfigured && isConfigured.openrouterApiKey ? 'API key está configurada' : 'API key não está configurada',
+        isConfigured && isConfigured.openrouterApiKey ? null : new Error('API key não configurada')
       );
       
       // Se a API key não estiver configurada, pular os próximos testes
-      if (!isConfigured.configured) {
+      if (!isConfigured && isConfigured.openrouterApiKey) {
         console.log('API key não configurada, pulando testes restantes...');
         return;
       }
@@ -89,8 +89,8 @@ class OpenRouterIntegrationTests extends N8NIntegrationTests {
       console.log('Testando obtenção de modelos disponíveis...');
       
       // Verificar se a API key está configurada
-      const isConfigured = await this.sendTestRequest('checkOpenRouterConfig');
-      if (!isConfigured.configured) {
+      const isConfigured = await this.sendTestRequest('getSettings');
+      if (!isConfigured && isConfigured.openrouterApiKey) {
         this.recordTestResult(
           'Obter Modelos Disponíveis', 
           true, 
@@ -125,8 +125,8 @@ class OpenRouterIntegrationTests extends N8NIntegrationTests {
       console.log('Testando geração de workflow...');
       
       // Verificar se a API key está configurada
-      const isConfigured = await this.sendTestRequest('checkOpenRouterConfig');
-      if (!isConfigured.configured) {
+      const isConfigured = await this.sendTestRequest('getSettings');
+      if (!isConfigured && isConfigured.openrouterApiKey) {
         this.recordTestResult(
           'Gerar Workflow', 
           true, 
@@ -186,8 +186,8 @@ class OpenRouterIntegrationTests extends N8NIntegrationTests {
       console.log('Testando exportação de workflow...');
       
       // Verificar se a API key está configurada
-      const isConfigured = await this.sendTestRequest('checkOpenRouterConfig');
-      if (!isConfigured.configured) {
+      const isConfigured = await this.sendTestRequest('getSettings');
+      if (!isConfigured && isConfigured.openrouterApiKey) {
         this.recordTestResult(
           'Exportar Workflow', 
           true, 
@@ -249,8 +249,8 @@ class OpenRouterIntegrationTests extends N8NIntegrationTests {
       console.log('Testando ciclo completo de geração e exportação de workflow...');
       
       // Verificar se a API key está configurada
-      const isConfigured = await this.sendTestRequest('checkOpenRouterConfig');
-      if (!isConfigured.configured) {
+      const isConfigured = await this.sendTestRequest('getSettings');
+      if (!isConfigured && isConfigured.openrouterApiKey) {
         this.recordTestResult(
           'Ciclo Completo de Workflow', 
           true, 

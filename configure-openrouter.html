@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar OpenRouter API Key</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .api-key-box {
+            background: #f8f9fa;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            font-size: 14px;
+        }
+        .step {
+            background: #e9ecef;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button.success {
+            background: #28a745;
+        }
+        .button.danger {
+            background: #dc3545;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .copy-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 Configurar OpenRouter API Key</h1>
+        
+        <div class="step">
+            <h3>1. API Key Fornecida</h3>
+            <p>Use a seguinte API key para configurar o OpenRouter:</p>
+            <div class="api-key-box">
+                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
+                <button class="copy-button" onclick="copyApiKey()">Copiar</button>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>2. Configuração Automática</h3>
+            <p>Clique no botão abaixo para configurar automaticamente a API key na extensão:</p>
+            <button class="button" onclick="configureApiKey()">Configurar API Key</button>
+            <button class="button" onclick="testConnection()">Testar Conexão</button>
+            <button class="button success" onclick="setupComplete()">Configurar Tudo</button>
+        </div>
+
+        <div class="step">
+            <h3>3. Configuração Manual</h3>
+            <p>Se a configuração automática não funcionar, siga estes passos:</p>
+            <ol>
+                <li>Abra a extensão N8N Workflow Assistant</li>
+                <li>Vá para a aba "Settings"</li>
+                <li>Cole a API key no campo "OpenRouter API Key"</li>
+                <li>Clique em "Save Settings"</li>
+                <li>Execute os testes para verificar</li>
+            </ol>
+        </div>
+
+        <div id="status"></div>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        const API_KEY = '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';
+        
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function addLog(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function copyApiKey() {
+            navigator.clipboard.writeText(API_KEY).then(() => {
+                showStatus('API Key copiada para a área de transferência!', 'success');
+            }).catch(err => {
+                showStatus('Erro ao copiar API Key', 'error');
+            });
+        }
+        
+        async function configureApiKey() {
+            try {
+                showStatus('Configurando API Key...', 'info');
+                addLog('Iniciando configuração da API Key...');
+                
+                if (typeof chrome === 'undefined' || !chrome.storage) {
+                    throw new Error('Esta página deve ser aberta como extensão do Chrome');
+                }
+                
+                // Obter configurações existentes
+                const currentData = await chrome.storage.local.get('settings');
+                const settings = currentData.settings || {};
+                
+                addLog('Configurações atuais obtidas');
+                
+                // Adicionar/atualizar a API key
+                settings.openrouterApiKey = API_KEY;
+                settings.defaultModel = 'meta-llama/llama-3.1-8b-instruct:free';
+                
+                // Salvar no storage
+                await chrome.storage.local.set({ settings });
+                
+                addLog('API Key salva no storage');
+                
+                // Verificar se foi salva corretamente
+                const verification = await chrome.storage.local.get('settings');
+                
+                if (verification.settings.openrouterApiKey === API_KEY) {
+                    showStatus('✅ API Key configurada com sucesso!', 'success');
+                    addLog('API Key verificada com sucesso');
+                    return true;
+                } else {
+                    throw new Error('API Key não foi salva corretamente');
+                }
+            } catch (error) {
+                showStatus(`❌ Erro: ${error.message}`, 'error');
+                addLog(`Erro: ${error.message}`);
+                return false;
+            }
+        }
+        
+        async function testConnection() {
+            try {
+                showStatus('Testando conexão com OpenRouter...', 'info');
+                addLog('Testando conexão com OpenRouter...');
+                
+                const response = await fetch('https://openrouter.ai/api/v1/models', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showStatus('✅ Conexão com OpenRouter bem-sucedida!', 'success');
+                    addLog(`Conexão bem-sucedida! ${data.data?.length || 0} modelos disponíveis`);
+                    return true;
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(`Erro ${response.status}: ${errorData.error?.message || response.statusText}`);
+                }
+            } catch (error) {
+                showStatus(`❌ Erro na conexão: ${error.message}`, 'error');
+                addLog(`Erro na conexão: ${error.message}`);
+                return false;
+            }
+        }
+        
+        async function setupComplete() {
+            showStatus('Executando configuração completa...', 'info');
+            addLog('=== Iniciando configuração completa ===');
+            
+            const configured = await configureApiKey();
+            if (configured) {
+                const connected = await testConnection();
+                if (connected) {
+                    showStatus('🎉 OpenRouter configurado e testado com sucesso!', 'success');
+                    addLog('=== Configuração completa bem-sucedida ===');
+                    addLog('Agora você pode executar os testes na extensão');
+                }
+            }
+        }
+        
+        // Inicializar log
+        document.getElementById('log').innerHTML = '<div class="log"></div>';
+        
+        // Mostrar instruções iniciais
+        showStatus('Pronto para configurar a API Key do OpenRouter', 'info');
+    </script>
+</body>
+</html>
